@@ -1,0 +1,113 @@
+/* Full-page container */
+.app-container {
+  display: flex;
+  height: 100vh;        
+  width: 100vw;         
+  overflow: hidden;     
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background-color: #641822;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.menu-link {
+  color: #ffffff;
+  text-decoration: none;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.menu-link:hover,
+.menu-link.active {
+  background-color: #c90101;
+  color: white;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  background-color: #ffffff; /* changed from yellow */
+  overflow-y: auto;
+}
+
+/* Search container */
+.search-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-container input,
+.search-container select {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #641822;
+  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* shadow added */
+  transition: 0.3s;
+}
+
+.search-container input:focus,
+.search-container select:focus {
+  outline: none;
+  box-shadow: 0 0 5px #c90101;
+}
+
+/* Add button */
+.add-button {
+  background-color: #c90101;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* shadow added */
+  transition: 0.3s;
+}
+
+.add-button:hover {
+  background-color: #e8a425;
+  color: #641822;
+}
+
+/* Table container */
+.table-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* shadow added */
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center; /* center all table texts */
+}
+
+.table-container th,
+.table-container td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.table-container th {
+  background-color: #c90101;
+  color: white;
+}

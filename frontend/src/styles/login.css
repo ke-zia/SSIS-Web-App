@@ -1,0 +1,150 @@
+/* Full-page container, stretches to full viewport */
+.login-page {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  align-items: center;     /* center vertically */
+  height: 100vh;           /* full viewport height */
+  width: 100vw;            /* full viewport width */
+  background-color: #000000; /* background color */
+  margin: 0;
+  padding: 0;
+  overflow: hidden;        /* remove scrollbars */
+}
+
+/* Login box */
+.login-box {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* center content inside */
+  gap: 1.5rem;               /* spacing between elements */
+}
+
+/* Heading */
+.login-box h2 {
+  color: #641822;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+/* Inputs (narrower width and spacing) */
+.login-box input {
+  width: 350px;               /* smaller width */
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  display: block;
+  margin: 0 auto;           /* center inputs */
+}
+
+.login-box input {
+  width: 350px;               
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 2px solid #641822;
+  background-color: #ffffff;
+  font-size: 1rem;
+  color: #000000;
+  display: block;
+  margin: 0 auto 1.5rem auto; /* more spacing between email & password */
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* Input focus effect */
+.login-box input:focus {
+  outline: none;  /* remove default blue outline */
+  background-color: #ffd9de; /* very faint #641822 */
+  border-color: #c90101; /* optional highlight */
+  color: #000000;
+}
+
+/* Login button (smaller and spaced) */
+.login-box .login-btn {
+  width: 30%;               /* smaller button */
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #c90101;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 0.5rem;       /* space above button */
+}
+
+.login-box .login-btn:hover {
+  background-color: #e8a425;
+}
+
+/* Links */
+.login-box .links {
+  display: flex;
+  justify-content: space-between;
+  width: 80%;              /* match input width */
+  margin-top: 0.5rem;
+}
+
+.login-box .links a {
+  font-size: 0.85rem;
+  color: #641822;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.login-box .links a:hover {
+  color: #c90101;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .login-box {
+    padding: 1.5rem;
+    gap: 1.2rem;
+  }
+  .login-box h2 {
+    font-size: 1.5rem;
+  }
+  .login-box input {
+    width: 90%;
+    font-size: 0.9rem;
+  }
+  .login-box .login-btn {
+    width: 60%;
+  }
+  .login-box .links {
+    width: 90%;
+  }
+}
+
+@media (max-width: 400px) {
+  .login-box {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .login-box h2 {
+    font-size: 1.2rem;
+  }
+  .login-box input {
+    width: 90%;
+    font-size: 0.85rem;
+    padding: 0.6rem;
+  }
+  .login-box .login-btn {
+    width: 70%;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .login-box .links {
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 90%;
+    align-items: center;
+  }
+}
