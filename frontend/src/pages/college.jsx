@@ -5,10 +5,6 @@ const College = () => {
     <div className="main-content">
       <div className="search-container">
         <input type="text" placeholder="Search..." />
-        <select>
-          <option value="name">Name</option>
-          <option value="code">Code</option>
-        </select>
       </div>
       <button className="add-button">Add College</button>
       <div className="table-container">

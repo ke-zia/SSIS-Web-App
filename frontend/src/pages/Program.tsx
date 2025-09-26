@@ -1,15 +1,10 @@
 import React from "react";
 
-const Program = () => {
+const Program: React.FC = () => {
   return (
     <div className="main-content">
       <div className="search-container">
         <input type="text" placeholder="Search..." />
-        <select>
-          <option value="college">College</option>
-          <option value="name">Name</option>
-          <option value="code">Code</option>
-        </select>
       </div>
       <button className="add-button">Add Program</button>
       <div className="table-container">
@@ -31,3 +26,4 @@ const Program = () => {
 };
 
 export default Program;
+

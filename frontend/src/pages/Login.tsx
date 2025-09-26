@@ -2,13 +2,17 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 
-const Login = ({ onLogin }) => {
+interface LoginProps {
+  onLogin?: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (onLogin) onLogin();
-    navigate("/college"); // redirect to dashboard page
+    navigate("/dashboard/colleges"); // redirect to colleges page
   };
 
   return (
@@ -30,3 +34,4 @@ const Login = ({ onLogin }) => {
 };
 
 export default Login;
+

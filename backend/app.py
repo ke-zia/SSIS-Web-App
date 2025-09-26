@@ -1,21 +1,8 @@
-from flask import Flask
-from flask_cors import CORS
-import os
+"""Main application entry point."""
 
-def create_app():
-    """Application Factory"""
-    app = Flask(__name__)
+from app import create_app
 
-    app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SSIS-ccc181-0040", "dev"),
-        API_PREFIX=os.environ.get("API_PREFIX", "/api"),
-    )
+app = create_app()
 
-    CORS(app)
-
-    # Example test route
-    @app.route("/")
-    def index():
-        return {"message": "Flask backend is running!"}
-
-    return app
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
