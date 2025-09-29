@@ -23,9 +23,13 @@ def create_app():
 
     # Import models to register them with SQLAlchemy
     from .models import college  # noqa: F401
+    from .models import program  # noqa: F401
 
     # Register blueprints
     from .routes import colleges
     app.register_blueprint(colleges.colleges_bp, url_prefix="/api/colleges")
+    
+    from .routes import programs
+    app.register_blueprint(programs.programs_bp, url_prefix="/api/programs")
 
     return app

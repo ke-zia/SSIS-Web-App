@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import CollegesPage from "./pages/CollegesPage";
+import ProgramsPage from "./pages/ProgramsPage";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-import Program from "./pages/Program";
 import Students from "./pages/Students";
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Navigate to="colleges" replace />} />
           <Route path="colleges" element={<CollegesPage />} />
-          <Route path="programs" element={<Program />} />
+          <Route path="programs" element={<ProgramsPage />} />
           <Route path="students" element={<Students />} />
         </Route>
         
