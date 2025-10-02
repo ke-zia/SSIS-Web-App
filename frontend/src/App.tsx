@@ -3,7 +3,7 @@ import CollegesPage from "./pages/CollegesPage";
 import ProgramsPage from "./pages/ProgramsPage";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-import Students from "./pages/Students";
+import StudentsPage from "./pages/StudentsPage";
 
 function App() {
   return (
@@ -18,7 +18,7 @@ function App() {
           <Route index element={<Navigate to="colleges" replace />} />
           <Route path="colleges" element={<CollegesPage />} />
           <Route path="programs" element={<ProgramsPage />} />
-          <Route path="students" element={<Students />} />
+          <Route path="students" element={<StudentsPage />} />
         </Route>
         
         {/* Redirect old routes to new nested structure */}

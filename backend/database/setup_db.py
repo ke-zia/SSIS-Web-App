@@ -126,7 +126,7 @@ def verify_tables():
         cursor = conn.cursor()
 
         # Check if all expected tables exist
-        expected_tables = ["colleges", "programs"]
+        expected_tables = ["colleges", "programs", "students"]
 
         cursor.execute(
             """

@@ -2,20 +2,20 @@ import React, { useEffect, useRef } from "react";
 import { Button } from "../ui/button";
 import { AlertTriangle, X } from "lucide-react";
 
-interface DeleteProgramProps {
+interface DeleteStudentProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  programName: string;
-  programCode: string;
+  studentId: string;
+  studentName: string;
   onConfirm: () => void;
   isDeleting: boolean;
 }
 
-const DeleteProgram: React.FC<DeleteProgramProps> = ({
+const DeleteStudent: React.FC<DeleteStudentProps> = ({
   open,
   onOpenChange,
-  programName,
-  programCode,
+  studentId,
+  studentName,
   onConfirm,
   isDeleting,
 }) => {
@@ -76,10 +76,10 @@ const DeleteProgram: React.FC<DeleteProgramProps> = ({
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4 rounded-t-2xl">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              Delete Program
+              Delete Student
             </h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              Confirm deletion of this program
+              Confirm deletion of this student
             </p>
           </div>
           <button
@@ -105,23 +105,23 @@ const DeleteProgram: React.FC<DeleteProgramProps> = ({
             {/* Warning Message */}
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Are you sure you want to delete this program?
+                Are you sure you want to delete this student?
               </h3>
               <p className="text-gray-600 text-sm">
                 This action cannot be undone. This will permanently delete:
               </p>
             </div>
 
-            {/* Program Details Card */}
+            {/* Student Details Card */}
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Program Code:</span>
-                  <span className="text-sm font-medium text-gray-900">{programCode}</span>
+                  <span className="text-sm font-medium text-gray-700">Student ID:</span>
+                  <span className="text-sm font-medium text-gray-900">{studentId}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Program Name:</span>
-                  <span className="text-sm font-medium text-gray-900 text-right">{programName}</span>
+                  <span className="text-sm font-medium text-gray-700">Last Name:</span>
+                  <span className="text-sm font-medium text-gray-900 text-right">{studentName}</span>
                 </div>
               </div>
             </div>
@@ -133,7 +133,7 @@ const DeleteProgram: React.FC<DeleteProgramProps> = ({
                 <div>
                   <p className="text-xs font-medium text-yellow-800 mb-1">Warning</p>
                   <p className="text-xs text-yellow-700">
-                    Deleting this program may affect related students and records. 
+                    Deleting this student will remove all their enrollment records and related data. 
                     Please ensure this action is necessary.
                   </p>
                 </div>
@@ -166,7 +166,7 @@ const DeleteProgram: React.FC<DeleteProgramProps> = ({
                     Deleting...
                   </>
                 ) : (
-                  "Delete Program"
+                  "Delete Student"
                 )}
               </Button>
             </div>
@@ -177,6 +177,4 @@ const DeleteProgram: React.FC<DeleteProgramProps> = ({
   );
 };
 
-export default DeleteProgram;
-
-
+export default DeleteStudent;

@@ -609,7 +609,7 @@ const ProgramsPage: React.FC = () => {
                           {!searchQuery && (
                             <Button
                               onClick={openAddDialog}
-                              className="mt-3 bg-red-600 hover:bg-red-700"
+                              className="text-white gap-2 mt-2 bg-red-600 hover:bg-red-700"
                               size="sm"
                             >
                               <Plus className="h-4 w-4 mr-2" />

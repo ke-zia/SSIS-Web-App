@@ -21,3 +21,18 @@ CREATE TABLE IF NOT EXISTS programs (
 CREATE INDEX IF NOT EXISTS idx_programs_code ON programs(code);
 CREATE INDEX IF NOT EXISTS idx_programs_college_id ON programs(college_id);
 
+-- Create students table
+CREATE TABLE IF NOT EXISTS students (
+    id VARCHAR(20) PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    program_id INTEGER,
+    year_level INTEGER NOT NULL,
+    gender VARCHAR(10) NOT NULL,
+    CONSTRAINT fk_students_program FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE SET NULL
+);
+
+-- Create indexes for faster lookups
+CREATE INDEX IF NOT EXISTS idx_students_program_id ON students(program_id);
+CREATE INDEX IF NOT EXISTS idx_students_first_name ON students(first_name);
+CREATE INDEX IF NOT EXISTS idx_students_last_name ON students(last_name);

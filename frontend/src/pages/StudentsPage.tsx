@@ -20,19 +20,23 @@ import {
   Card,
   CardContent
 } from "../components/ui/card";
+import { Student } from "../types/student";
 import { College } from "../types/college";
 import {
+  getAllStudents,
+  deleteStudent,
+} from "../services/studentsService";
+import {
   getAllColleges,
-  deleteCollege,
 } from "../services/collegeService";
-import AddEditCollege from "../components/college/AddEditCollege";
-import DeleteCollege from "../components/college/DeleteCollege";
+import AddEditStudent from "../components/student/AddEditStudent";
+import DeleteStudent from "../components/student/DeleteStudent";
 import { 
   Search, 
   Plus, 
   Edit, 
   Trash2, 
-  Building2, 
+  Users, 
   ChevronRight, 
   ChevronLeft,
   ArrowUp,
@@ -40,13 +44,17 @@ import {
   ChevronsUpDown
 } from "lucide-react";
 import { debounce } from "../utils/helpers";
+import { getAllPrograms } from "../services/programService";
+import { Program } from "../types/program";
 
-const CollegesPage: React.FC = () => {
+const StudentsPage: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchBy, setSearchBy] = useState<"all" | "code" | "name">("all");
+  const [searchBy, setSearchBy] = useState<"all" | "id" | "name" | "program" | "gender">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,11 +64,11 @@ const CollegesPage: React.FC = () => {
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [collegeToDelete, setCollegeToDelete] = useState<College | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [successToast, setSuccessToast] = useState({
@@ -71,74 +79,97 @@ const CollegesPage: React.FC = () => {
   const debouncedSearch = useMemo(
     () => debounce((query: string) => {
       setSearchQuery(query);
-      setCurrentPage(1); // Reset to first page when search changes
+      setCurrentPage(1);
     }, 300),
     []
   );
 
-  const fetchColleges = async () => {
+  const fetchStudents = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getAllColleges(
+      const data = await getAllStudents(
         sortBy || undefined,
         sortBy ? sortOrder : undefined,
         searchQuery || undefined,
         searchBy
       );
-      setColleges(data);
+      setStudents(data);
     } catch (err) {
-      console.error("Failed to fetch colleges:", err);
-      setError("Failed to load colleges. Please try again.");
+      console.error("Failed to fetch students:", err);
+      setError("Failed to load students. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const fetchColleges = async () => {
+    try {
+      const data = await getAllColleges();
+      setColleges(data);
+    } catch (err) {
+      console.error("Failed to fetch colleges:", err);
+    }
+  };
+
+  const fetchPrograms = async () => {
+    try {
+      const data = await getAllPrograms();
+      setPrograms(data);
+    } catch (err) {
+      console.error("Failed to fetch programs:", err);
+    }
+  };
+
   useEffect(() => {
     fetchColleges();
+    fetchPrograms();
+  }, []);
+
+  useEffect(() => {
+    fetchStudents();
   }, [sortBy, sortOrder, searchQuery, searchBy]);
 
   const openAddDialog = () => {
-    setSelectedCollege(null);
+    setSelectedStudent(null);
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (college: College) => {
-    setSelectedCollege(college);
+  const openEditDialog = (student: Student) => {
+    setSelectedStudent(student);
     setIsDialogOpen(true);
   };
 
-  const openDeleteDialog = (college: College) => {
-    setCollegeToDelete(college);
+  const openDeleteDialog = (student: Student) => {
+    setStudentToDelete(student);
     setIsDeleteDialogOpen(true);
   };
 
   const handleModalSuccess = async () => {
-    await fetchColleges();
+    await fetchStudents();
     showSuccessToast(
-      selectedCollege 
-        ? "College updated successfully!" 
-        : "College added successfully!"
+      selectedStudent 
+        ? "Student updated successfully!" 
+        : "Student added successfully!"
     );
   };
 
   const handleDelete = async () => {
-    if (!collegeToDelete) return;
+    if (!studentToDelete) return;
     
     setIsDeleting(true);
     try {
-      await deleteCollege(collegeToDelete.id);
-      await fetchColleges();
-      showSuccessToast("College deleted successfully!");
+      await deleteStudent(studentToDelete.id);
+      await fetchStudents();
+      showSuccessToast("Student deleted successfully!");
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete college";
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete student";
       setError(errorMessage);
       setTimeout(() => setError(null), 5000);
     } finally {
       setIsDeleting(false);
-      setCollegeToDelete(null);
+      setStudentToDelete(null);
     }
   };
 
@@ -171,55 +202,128 @@ const CollegesPage: React.FC = () => {
     }
   };
 
-  const columns = useMemo<ColumnDef<College>[]>(
+  const columns = useMemo<ColumnDef<Student>[]>(
     () => [
       {
-        accessorKey: "code",
+        accessorKey: "id",
         header: () => (
           <Button
             variant="ghost"
-            onClick={() => handleSort("code")}
+            onClick={() => handleSort("id")}
             className="h-8 px-2 hover:bg-transparent font-semibold"
           >
-            Code
-            {getSortIcon("code")}
+            ID
+            {getSortIcon("id")}
           </Button>
         ),
         cell: ({ row }) => (
           <div className="font-medium text-gray-900">
-            {row.getValue("code")}
+            {row.getValue("id")}
           </div>
+        ),
+        size: 130,
+      },
+      {
+        accessorKey: "first_name",
+        header: () => (
+          <Button
+            variant="ghost"
+            onClick={() => handleSort("first_name")}
+            className="h-8 px-2 hover:bg-transparent font-semibold"
+          >
+            First Name
+            {getSortIcon("first_name")}
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-gray-700">{row.getValue("first_name")}</div>
         ),
         size: 150,
       },
       {
-        accessorKey: "name",
+        accessorKey: "last_name",
         header: () => (
           <Button
             variant="ghost"
-            onClick={() => handleSort("name")}
+            onClick={() => handleSort("last_name")}
             className="h-8 px-2 hover:bg-transparent font-semibold"
           >
-            Name
-            {getSortIcon("name")}
+            Last Name
+            {getSortIcon("last_name")}
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="text-gray-700">{row.getValue("name")}</div>
+          <div className="text-gray-700">{row.getValue("last_name")}</div>
         ),
-        size: 500,
+        size: 150,
+      },
+      {
+        accessorKey: "program_name",
+        header: () => (
+          <Button
+            variant="ghost"
+            onClick={() => handleSort("program")}
+            className="h-8 px-2 hover:bg-transparent font-semibold"
+          >
+            Program
+            {getSortIcon("program")}
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const programName = row.getValue("program_name") as string;
+          return (
+            <div className={`text-gray-700 ${programName === "Not Applicable" ? "italic text-gray-400" : ""}`}>
+              {programName}
+            </div>
+          );
+        },
+        size: 200,
+      },
+      {
+        accessorKey: "year_level",
+        header: () => (
+          <Button
+            variant="ghost"
+            onClick={() => handleSort("year_level")}
+            className="h-8 px-2 hover:bg-transparent font-semibold"
+          >
+            Year Level
+            {getSortIcon("year_level")}
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-gray-700">{row.getValue("year_level")}</div>
+        ),
+        size: 120,
+      },
+      {
+        accessorKey: "gender",
+        header: () => (
+          <Button
+            variant="ghost"
+            onClick={() => handleSort("gender")}
+            className="h-8 px-2 hover:bg-transparent font-semibold"
+          >
+            Gender
+            {getSortIcon("gender")}
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-gray-700">{row.getValue("gender")}</div>
+        ),
+        size: 100,
       },
       {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => {
-          const college = row.original;
+          const student = row.original;
           return (
             <div className="flex gap-2 justify-start">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => openEditDialog(college)}
+                onClick={() => openEditDialog(student)}
                 className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                 title="Edit"
               >
@@ -228,7 +332,7 @@ const CollegesPage: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => openDeleteDialog(college)}
+                onClick={() => openDeleteDialog(student)}
                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                 title="Delete"
               >
@@ -244,19 +348,17 @@ const CollegesPage: React.FC = () => {
     [sortBy, sortOrder]
   );
 
-  // Note: Filtering is now handled by the backend
-  // Colleges are already filtered when received from the API
-  const filteredColleges = colleges;
+  const filteredStudents = students;
 
   // Calculate pagination
   const startIndex = (currentPage - 1) * entriesPerPage;
   const endIndex = startIndex + entriesPerPage;
-  const paginatedColleges = filteredColleges.slice(startIndex, endIndex);
-  const displayTotal = filteredColleges.length;
+  const paginatedStudents = filteredStudents.slice(startIndex, endIndex);
+  const displayTotal = filteredStudents.length;
 
   // Update table with paginated data
   const table = useReactTable({
-    data: paginatedColleges,
+    data: paginatedStudents,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -277,7 +379,7 @@ const CollegesPage: React.FC = () => {
   };
 
   const handleSearchByChange = (value: string) => {
-    setSearchBy(value as "all" | "code" | "name");
+    setSearchBy(value as "all" | "id" | "name" | "program" | "gender");
     setCurrentPage(1);
   };
 
@@ -288,7 +390,7 @@ const CollegesPage: React.FC = () => {
     }, 3000);
   };
 
-  // Custom pagination component for 1-2-3 style
+  // Custom pagination component
   const CustomPagination = () => {
     const totalPages = Math.ceil(displayTotal / entriesPerPage) || 1;
     const startEntry = displayTotal === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
@@ -320,7 +422,7 @@ const CollegesPage: React.FC = () => {
     return (
       <div className="flex items-center justify-between w-full">
         <div className="text-sm text-gray-600">
-          Showing <span className="font-medium">{startEntry}-{endEntry}</span> of <span className="font-medium">{displayTotal}</span> colleges
+          Showing <span className="font-medium">{startEntry}-{endEntry}</span> of <span className="font-medium">{displayTotal}</span> students
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -370,9 +472,9 @@ const CollegesPage: React.FC = () => {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Colleges Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Students Management</h1>
           <p className="text-gray-600">
-            Manage all college departments and programs
+            Manage all student records and enrollment information
           </p>
         </div>
 
@@ -401,30 +503,30 @@ const CollegesPage: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Colleges</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{colleges.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Total Students</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{students.length}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-red-50">
-                  <Building2 className="h-6 w-6 text-red-600" />
+                  <Users className="h-6 w-6 text-red-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Add College Card */}
+          {/* Add Student Card */}
           <Card className="border border-gray-200 shadow-sm md:col-span-3">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Add new college to the system</p>
-                  <p className="text-xs text-gray-500 mt-1">Create departments and programs under each college</p>
+                  <p className="text-sm font-medium text-gray-600">Add new student to the system</p>
+                  <p className="text-xs text-gray-500 mt-1">Enroll students and assign them to programs</p>
                 </div>
                 <Button
                   onClick={openAddDialog}
                   className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add College
+                  Add Student
                 </Button>
               </div>
             </CardContent>
@@ -442,21 +544,23 @@ const CollegesPage: React.FC = () => {
                   <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
                     <Input
-                      placeholder="Search colleges..."
+                      placeholder="Search students..."
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-9 border-gray-300 w-full"
                     />
                   </div>
                   
-                  {/* Search by dropdown - updated with "all" option */}
+                  {/* Search by dropdown */}
                   <Select
                     value={searchBy}
                     onChange={(e) => handleSearchByChange(e.target.value)}
                     className="w-[150px] border-gray-300 h-9 text-sm"
                   >
                     <option value="all">Search by</option>
+                    <option value="id">ID</option>
                     <option value="name">Name</option>
-                    <option value="code">Code</option>
+                    <option value="program">Program</option>
+                    <option value="gender">Gender</option>
                   </Select>
                 </div>
                 
@@ -487,7 +591,7 @@ const CollegesPage: React.FC = () => {
           <div className="border-b border-gray-200 overflow-x-auto">
             {isLoading ? (
               <div className="p-8 text-center">
-                <div className="text-gray-600">Loading colleges...</div>
+                <div className="text-gray-600">Loading students...</div>
               </div>
             ) : (
               <Table className="w-full">
@@ -555,24 +659,23 @@ const CollegesPage: React.FC = () => {
                       >
                         <div className="flex flex-col items-center justify-center gap-3">
                           <div className="p-4 rounded-full bg-gray-100">
-                            <Building2 className="h-10 w-10 text-gray-400" />
+                            <Users className="h-10 w-10 text-gray-400" />
                           </div>
-                          <div className="text-gray-500 font-medium">
-                            No colleges found
+                          <div>
+                            <p className="font-medium text-gray-500">No students found</p>
                           </div>
-                          <div className="text-gray-400 text-sm">
+                          <div className="text-sm text-gray-400">
                             {searchQuery 
                               ? "No results match your search" 
-                              : "Get started by adding your first college"}
+                              : "Get started by adding your first student"}
                           </div>
                           {!searchQuery && (
                             <Button
                               onClick={openAddDialog}
-                              className="text-white gap-2 mt-2 bg-red-600 hover:bg-red-700"
-                              size="sm"
+                              className="bg-red-600 hover:bg-red-700 text-white gap-2 mt-2"
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              Add College
+                              Add Student
                             </Button>
                           )}
                         </div>
@@ -584,28 +687,30 @@ const CollegesPage: React.FC = () => {
             )}
           </div>
 
-          {/* Pagination Section */}
-          <div className="p-4">
+          {/* Pagination */}
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
             <CustomPagination />
           </div>
         </Card>
       </div>
 
-      {/* Add/Edit College Dialog */}
-      <AddEditCollege
+      {/* Add/Edit Dialog */}
+      <AddEditStudent
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        college={selectedCollege}
+        student={selectedStudent}
+        students={students}
         colleges={colleges}
+        programs={programs}
         onSuccess={handleModalSuccess}
       />
 
-      {/* Delete College Dialog */}
-      <DeleteCollege
+      {/* Delete Student Dialog */}
+      <DeleteStudent
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        collegeName={collegeToDelete?.name || ""}
-        collegeCode={collegeToDelete?.code || ""}
+        studentId={studentToDelete?.id || ""}
+        studentName={studentToDelete?.last_name || ""}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
       />
@@ -613,4 +718,4 @@ const CollegesPage: React.FC = () => {
   );
 };
 
-export default CollegesPage;
+export default StudentsPage;

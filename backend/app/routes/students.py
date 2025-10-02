@@ -1,17 +1,17 @@
-"""Program routes."""
+"""Student routes."""
 
 from http import HTTPStatus
 
 from flask import Blueprint, jsonify, request
 
-from ..services.program_service import ProgramService
+from ..services.student_service import StudentService
 
-programs_bp = Blueprint("programs", __name__)
+students_bp = Blueprint("students", __name__)
 
 
-@programs_bp.get("")
-def list_programs():
-    """GET /programs - return all programs with optional sorting and search."""
+@students_bp.get("")
+def list_students():
+    """GET /students - return all students with optional sorting and search."""
     # Get sorting parameters from query string
     sort_by = request.args.get("sort_by", "").strip()
     order = request.args.get("order", "asc").strip().lower()
@@ -25,10 +25,10 @@ def list_programs():
         order = "asc"
     
     # Validate search_by parameter
-    if search_by not in ["all", "code", "name", "college"]:
+    if search_by not in ["all", "id", "name", "program", "gender"]:
         search_by = "all"
     
-    result = ProgramService.list_all(
+    result = StudentService.list_all(
         sort_by=sort_by,
         order=order,
         search=search,
@@ -39,11 +39,11 @@ def list_programs():
     return jsonify(result["data"]), HTTPStatus.OK
 
 
-@programs_bp.post("")
-def create_program():
-    """POST /programs - create a new program."""
+@students_bp.post("")
+def create_student():
+    """POST /students - create a new student."""
     data = request.get_json() or {}
-    result = ProgramService.create_from_request(data)
+    result = StudentService.create_from_request(data)
 
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
@@ -51,11 +51,11 @@ def create_program():
     return jsonify(result["data"]), HTTPStatus.CREATED
 
 
-@programs_bp.put("/<int:program_id>")
-def update_program(program_id: int):
-    """PUT /programs/{id} - update an existing program."""
+@students_bp.put("/<string:student_id>")
+def update_student(student_id: str):
+    """PUT /students/{id} - update an existing student."""
     data = request.get_json() or {}
-    result = ProgramService.update_from_request(program_id, data)
+    result = StudentService.update_from_request(student_id, data)
 
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
@@ -63,10 +63,10 @@ def update_program(program_id: int):
     return jsonify(result["data"]), HTTPStatus.OK
 
 
-@programs_bp.delete("/<int:program_id>")
-def delete_program(program_id: int):
-    """DELETE /programs/{id} - remove a program."""
-    result = ProgramService.delete_by_id(program_id)
+@students_bp.delete("/<string:student_id>")
+def delete_student(student_id: str):
+    """DELETE /students/{id} - remove a student."""
+    result = StudentService.delete_by_id(student_id)
 
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
@@ -74,3 +74,11 @@ def delete_program(program_id: int):
     return ("", HTTPStatus.NO_CONTENT)
 
 
+@students_bp.get("/programs/<int:college_id>")
+def get_programs_by_college(college_id: int):
+    """GET /students/programs/{college_id} - get programs for a college."""
+    result = StudentService.get_programs_by_college(college_id)
+    
+    if result["error"]:
+        return jsonify({"message": result["error"]}), result["status"]
+    return jsonify(result["data"]), HTTPStatus.OK
