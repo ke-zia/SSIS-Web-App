@@ -48,20 +48,20 @@ class StudentService:
                             Student.first_name.ilike(search_lower),
                             Student.last_name.ilike(search_lower),
                             Program.name.ilike(search_lower),
-                            Student.gender.ilike(search_lower)
+                            Student.gender.ilike(search_lower),
+                            db.func.cast(Student.year_level, db.String).ilike(search_lower)
                         )
                     )
                 elif search_by == "id":
                     query = query.filter(Student.id.ilike(search_lower))
-                elif search_by == "name":
-                    query = query.filter(
-                        or_(
-                            Student.first_name.ilike(search_lower),
-                            Student.last_name.ilike(search_lower)
-                        )
-                    )
+                elif search_by == "first_name":
+                    query = query.filter(Student.first_name.ilike(search_lower))
+                elif search_by == "last_name":
+                    query = query.filter(Student.last_name.ilike(search_lower))
                 elif search_by == "program":
                     query = query.filter(Program.name.ilike(search_lower))
+                elif search_by == "year_level":
+                    query = query.filter(db.func.cast(Student.year_level, db.String).ilike(search_lower))
                 elif search_by == "gender":
                     query = query.filter(Student.gender.ilike(search_lower))
             

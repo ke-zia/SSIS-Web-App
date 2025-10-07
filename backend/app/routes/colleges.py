@@ -28,12 +28,7 @@ def list_colleges():
     if search_by not in ["all", "code", "name"]:
         search_by = "all"
     
-    result = CollegeService.list_all(
-        sort_by=sort_by,
-        order=order,
-        search=search,
-        search_by=search_by
-    )
+    result = CollegeService.list_all(sort_by=sort_by, order=order, search=search, search_by=search_by)
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
     return jsonify(result["data"]), HTTPStatus.OK

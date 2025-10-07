@@ -25,7 +25,7 @@ def list_students():
         order = "asc"
     
     # Validate search_by parameter
-    if search_by not in ["all", "id", "name", "program", "gender"]:
+    if search_by not in ["all", "id", "first_name", "last_name", "program", "year_level", "gender"]:
         search_by = "all"
     
     result = StudentService.list_all(

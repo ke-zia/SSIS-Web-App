@@ -36,3 +36,14 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE INDEX IF NOT EXISTS idx_students_program_id ON students(program_id);
 CREATE INDEX IF NOT EXISTS idx_students_first_name ON students(first_name);
 CREATE INDEX IF NOT EXISTS idx_students_last_name ON students(last_name);
+
+-- Create users table for authentication
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Index for faster email lookups
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

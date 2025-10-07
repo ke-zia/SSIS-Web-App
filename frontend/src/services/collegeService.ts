@@ -7,7 +7,7 @@ export async function getAllColleges(
   sortBy?: string,
   order?: "asc" | "desc",
   search?: string,
-  searchBy: "all" | "code" | "name" = "all"
+  searchBy?: "all" | "code" | "name"
 ): Promise<College[]> {
   const params = new URLSearchParams();
   if (sortBy) {
@@ -16,7 +16,7 @@ export async function getAllColleges(
   }
   if (search) {
     params.append("search", search);
-    params.append("search_by", searchBy);
+    params.append("search_by", searchBy || "all");
   }
   const queryString = params.toString();
   const url = queryString ? `/colleges?${queryString}` : "/colleges";

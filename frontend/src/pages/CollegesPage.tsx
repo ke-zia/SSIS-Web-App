@@ -417,7 +417,7 @@ const CollegesPage: React.FC = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Add new college to the system</p>
-                  <p className="text-xs text-gray-500 mt-1">Create departments and programs under each college</p>
+                  <p className="text-xs text-gray-500 mt-1">Create and manage college records</p>
                 </div>
                 <Button
                   onClick={openAddDialog}

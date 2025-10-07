@@ -8,7 +8,7 @@ export const getAllStudents = async (
   sortBy?: string,
   order?: "asc" | "desc",
   search?: string,
-  searchBy: "all" | "id" | "name" | "program" | "gender" = "all"
+  searchBy: "all" | "id" | "first_name" | "last_name" | "program" | "year_level" | "gender" = "all"
 ): Promise<Student[]> => {
   const params = new URLSearchParams();
   

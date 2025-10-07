@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import CollegesPage from "./pages/CollegesPage";
 import ProgramsPage from "./pages/ProgramsPage";
+import Login from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
 import StudentsPage from "./pages/StudentsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -13,8 +14,15 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         
-        {/* Dashboard layout with sidebar - nested routes */}
-        <Route path="/dashboard" element={<Dashboard />}>
+        {/* Protected Dashboard layout with sidebar - nested routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="colleges" replace />} />
           <Route path="colleges" element={<CollegesPage />} />
           <Route path="programs" element={<ProgramsPage />} />

@@ -3,7 +3,6 @@
 from http import HTTPStatus
 from typing import Dict, Optional
 
-from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from .. import db
@@ -15,18 +14,13 @@ class CollegeService:
     """Service for managing college operations."""
 
     @staticmethod
-    def list_all(
-        sort_by: str = "",
-        order: str = "asc",
-        search: str = "",
-        search_by: str = "all"
-    ) -> Dict:
+    def list_all(sort_by: str = "", order: str = "asc", search: str = "", search_by: str = "all") -> Dict:
         """
         Retrieve all colleges with optional sorting and search filtering.
 
         Args:
             sort_by: Column to sort by ('code' or 'name'). Empty string means no sorting.
-            order: Sort order ('asc' or 'desc'). Defaults to 'asc'. Only used when sort_by is provided.
+            order: Sort order ('asc' or 'desc'). Defaults to 'asc'.
             search: Search query string. Empty string means no filtering.
             search_by: Column to search in ('all', 'code', or 'name'). Defaults to 'all'.
 
@@ -34,6 +28,8 @@ class CollegeService:
             Dict with 'data' (list of college dicts) or 'error' and 'status'
         """
         try:
+            from sqlalchemy import or_
+            
             query = College.query
             
             # Apply search filtering if search query is provided
@@ -54,7 +50,7 @@ class CollegeService:
                     # Search only in name
                     query = query.filter(College.name.ilike(search_lower))
             
-            # Apply sorting ONLY if sort_by is provided and valid
+            # Apply sorting if sort_by is provided
             if sort_by:
                 if sort_by == "code":
                     if order == "desc":
@@ -66,11 +62,6 @@ class CollegeService:
                         query = query.order_by(College.name.desc())
                     else:
                         query = query.order_by(College.name.asc())
-                # If sort_by is provided but invalid, return unsorted
-                # (no ORDER BY clause - database default order)
-            
-            # If sort_by is empty string, also return unsorted
-            # (no ORDER BY clause - database default order)
             
             colleges = query.all()
             return {

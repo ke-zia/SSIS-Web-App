@@ -120,7 +120,7 @@ const DeleteStudent: React.FC<DeleteStudentProps> = ({
                   <span className="text-sm font-medium text-gray-900">{studentId}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Last Name:</span>
+                  <span className="text-sm font-medium text-gray-700">Name:</span>
                   <span className="text-sm font-medium text-gray-900 text-right">{studentName}</span>
                 </div>
               </div>

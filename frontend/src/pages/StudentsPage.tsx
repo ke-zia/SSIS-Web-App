@@ -54,7 +54,7 @@ const StudentsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchBy, setSearchBy] = useState<"all" | "id" | "name" | "program" | "gender">("all");
+  const [searchBy, setSearchBy] = useState<"all" | "id" | "first_name" | "last_name" | "program" | "year_level" | "gender">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -379,7 +379,7 @@ const StudentsPage: React.FC = () => {
   };
 
   const handleSearchByChange = (value: string) => {
-    setSearchBy(value as "all" | "id" | "name" | "program" | "gender");
+    setSearchBy(value as "all" | "id" | "first_name" | "last_name" | "program" | "year_level" | "gender");
     setCurrentPage(1);
   };
 
@@ -558,8 +558,10 @@ const StudentsPage: React.FC = () => {
                   >
                     <option value="all">Search by</option>
                     <option value="id">ID</option>
-                    <option value="name">Name</option>
+                    <option value="first_name">First Name</option>
+                    <option value="last_name">Last Name</option>
                     <option value="program">Program</option>
+                    <option value="year_level">Year Level</option>
                     <option value="gender">Gender</option>
                   </Select>
                 </div>
@@ -710,7 +712,7 @@ const StudentsPage: React.FC = () => {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         studentId={studentToDelete?.id || ""}
-        studentName={studentToDelete?.last_name || ""}
+        studentName={`${studentToDelete?.first_name || ""} ${studentToDelete?.last_name || ""}`.trim()}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
       />
