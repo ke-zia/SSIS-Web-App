@@ -36,6 +36,8 @@ class StudentService:
             Dict with 'data' (list of student dicts) or 'error' and 'status'
         """
         try:
+            from sqlalchemy import or_
+            
             query = Student.query.outerjoin(Program).outerjoin(College)
             
             # Apply search filtering if search query is provided
@@ -48,6 +50,7 @@ class StudentService:
                             Student.first_name.ilike(search_lower),
                             Student.last_name.ilike(search_lower),
                             Program.name.ilike(search_lower),
+                            Program.code.ilike(search_lower),
                             Student.gender.ilike(search_lower),
                             db.func.cast(Student.year_level, db.String).ilike(search_lower)
                         )
@@ -59,7 +62,12 @@ class StudentService:
                 elif search_by == "last_name":
                     query = query.filter(Student.last_name.ilike(search_lower))
                 elif search_by == "program":
-                    query = query.filter(Program.name.ilike(search_lower))
+                    query = query.filter(
+                        or_(
+                            Program.name.ilike(search_lower),
+                            Program.code.ilike(search_lower)
+                        )
+                    )
                 elif search_by == "year_level":
                     query = query.filter(db.func.cast(Student.year_level, db.String).ilike(search_lower))
                 elif search_by == "gender":

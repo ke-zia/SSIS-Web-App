@@ -52,7 +52,7 @@ const CollegesPage: React.FC = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -455,8 +455,8 @@ const CollegesPage: React.FC = () => {
                     className="w-[150px] border-gray-300 h-9 text-sm"
                   >
                     <option value="all">Search by</option>
-                    <option value="name">Name</option>
                     <option value="code">Code</option>
+                    <option value="name">Name</option>
                   </Select>
                 </div>
                 

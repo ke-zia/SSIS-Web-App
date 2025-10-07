@@ -60,7 +60,7 @@ const StudentsPage: React.FC = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -212,7 +212,7 @@ const StudentsPage: React.FC = () => {
             onClick={() => handleSort("id")}
             className="h-8 px-2 hover:bg-transparent font-semibold"
           >
-            ID
+            ID Number
             {getSortIcon("id")}
           </Button>
         ),
@@ -258,7 +258,7 @@ const StudentsPage: React.FC = () => {
         size: 150,
       },
       {
-        accessorKey: "program_name",
+        accessorKey: "program_id",
         header: () => (
           <Button
             variant="ghost"
@@ -270,10 +270,13 @@ const StudentsPage: React.FC = () => {
           </Button>
         ),
         cell: ({ row }) => {
-          const programName = row.getValue("program_name") as string;
+          const programId = row.getValue("program_id") as number | null;
+          const program = programs.find(p => p.id === programId);
+          const programCode = program?.code || "Not Applicable";
+
           return (
-            <div className={`text-gray-700 ${programName === "Not Applicable" ? "italic text-gray-400" : ""}`}>
-              {programName}
+            <div className={`text-gray-700 ${programCode === "Not Applicable" ? "italic text-gray-400" : ""}`}>
+              {programCode}
             </div>
           );
         },
@@ -345,7 +348,7 @@ const StudentsPage: React.FC = () => {
         enableSorting: false,
       },
     ],
-    [sortBy, sortOrder]
+    [sortBy, sortOrder, programs]
   );
 
   const filteredStudents = students;

@@ -108,17 +108,19 @@ const AddEditProgram: React.FC<AddEditProgramProps> = ({
     setIsSubmitting(true);
     try {
       const isEdit = program != null;
-      const saved = isEdit && program.id !== undefined
-        ? await updateProgram(program.id, {
-            college_id: formState.college_id!,
-            code: formState.code.trim(),
-            name: formState.name.trim(),
-          })
-        : await createProgram({
-            college_id: formState.college_id!,
-            code: formState.code.trim(),
-            name: formState.name.trim(),
-          });
+      if (isEdit && program.id !== undefined) {
+        await updateProgram(program.id, {
+          college_id: formState.college_id!,
+          code: formState.code.trim(),
+          name: formState.name.trim(),
+        });
+      } else {
+        await createProgram({
+          college_id: formState.college_id!,
+          code: formState.code.trim(),
+          name: formState.name.trim(),
+        });
+      }
 
       // Success - close dialog and refresh data
       onOpenChange(false);

@@ -57,7 +57,7 @@ const ProgramsPage: React.FC = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -192,7 +192,7 @@ const ProgramsPage: React.FC = () => {
   const columns = useMemo<ColumnDef<Program>[]>(
     () => [
       {
-        accessorKey: "college_name",
+        accessorKey: "college_id",
         header: () => (
           <Button
             variant="ghost"
@@ -204,10 +204,13 @@ const ProgramsPage: React.FC = () => {
           </Button>
         ),
         cell: ({ row }) => {
-          const collegeName = row.getValue("college_name") as string;
+          const collegeId = row.getValue("college_id") as number | null;
+          const college = colleges.find(c => c.id === collegeId);
+          const collegeCode = college?.code || "Not Applicable";
+          
           return (
-            <div className={`text-gray-700 ${collegeName === "Not Applicable" ? "italic text-gray-400" : ""}`}>
-              {collegeName}
+            <div className={`text-gray-700 ${collegeCode === "Not Applicable" ? "italic text-gray-400" : ""}`}>
+              {collegeCode}
             </div>
           );
         },
@@ -281,7 +284,7 @@ const ProgramsPage: React.FC = () => {
         enableSorting: false,
       },
     ],
-    [sortBy, sortOrder]
+    [sortBy, sortOrder, colleges] // IMPORTANT: Add colleges to dependencies
   );
 
   // Note: Filtering is now handled by the backend
@@ -495,9 +498,9 @@ const ProgramsPage: React.FC = () => {
                     className="w-[150px] border-gray-300 h-9 text-sm"
                   >
                     <option value="all">Search by</option>
-                    <option value="name">Name</option>
-                    <option value="code">Code</option>
                     <option value="college">College</option>
+                    <option value="code">Code</option>
+                    <option value="name">Name</option>
                   </Select>
                 </div>
                 

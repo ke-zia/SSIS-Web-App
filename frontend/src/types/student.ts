@@ -4,6 +4,7 @@ export interface Student {
   last_name: string;
   program_id: number | null;
   program_name: string;
+  program_code: string;
   year_level: number;
   gender: string;
 }

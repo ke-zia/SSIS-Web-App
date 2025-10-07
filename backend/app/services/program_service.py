@@ -1,5 +1,3 @@
-"""Service layer for program operations."""
-
 from http import HTTPStatus
 from typing import Dict, Optional
 
@@ -43,23 +41,29 @@ class ProgramService:
             if search:
                 search_lower = f"%{search.lower()}%"
                 if search_by == "all":
-                    # Search in code, name, and college name
+                    # Search in code, name, and college name AND college code
                     query = query.filter(
                         or_(
                             Program.code.ilike(search_lower),
                             Program.name.ilike(search_lower),
-                            College.name.ilike(search_lower)
+                            College.name.ilike(search_lower),
+                            College.code.ilike(search_lower)  # ADDED: Search by college code too
                         )
                     )
                 elif search_by == "code":
-                    # Search only in code
+                    # Search only in program code
                     query = query.filter(Program.code.ilike(search_lower))
                 elif search_by == "name":
-                    # Search only in name
+                    # Search only in program name
                     query = query.filter(Program.name.ilike(search_lower))
                 elif search_by == "college":
-                    # Search only in college name
-                    query = query.filter(College.name.ilike(search_lower))
+                    # Search in both college name AND college code
+                    query = query.filter(
+                        or_(
+                            College.name.ilike(search_lower),
+                            College.code.ilike(search_lower)  
+                        )
+                    )
             
             # Apply sorting ONLY if sort_by is provided and valid
             if sort_by:
@@ -314,4 +318,3 @@ class ProgramService:
                 "error": "Failed to delete program.",
                 "status": HTTPStatus.INTERNAL_SERVER_ERROR,
             }
-

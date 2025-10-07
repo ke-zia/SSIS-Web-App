@@ -176,18 +176,29 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     setIsSubmitting(true);
     try {
       const isEdit = student != null;
+
+      // Find selected program to include its code (frontend Student type requires program_code)
+      const selectedProgram =
+        collegePrograms.find((p) => p.id === formState.program_id) ||
+        allPrograms.find((p) => p.id === formState.program_id);
+
+      const program_code = selectedProgram ? selectedProgram.code : "";
+
       const studentData = {
         id: formState.id.trim(),
         first_name: formState.first_name.trim(),
         last_name: formState.last_name.trim(),
         program_id: formState.program_id,
+        program_code,
         year_level: parseInt(formState.year_level.toString()),
         gender: formState.gender,
       };
-      
-      isEdit
-        ? await updateStudent(student.id, studentData)
-        : await createStudent(studentData);
+
+      if (isEdit) {
+        await updateStudent(student.id, studentData);
+      } else {
+        await createStudent(studentData);
+      }
 
       // Success - close dialog and refresh data
       onOpenChange(false);
