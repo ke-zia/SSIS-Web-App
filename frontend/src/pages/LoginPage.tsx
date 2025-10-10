@@ -71,9 +71,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="brand-content">
               <h1 className="brand-title">Simple Student Information System</h1>
               <p className="brand-description">
-                A streamlined platform for managing student records, 
-                academic data, and institutional information with efficiency 
-                and precision.
+                A web application that allows users to easily manage academic data by adding and organizing colleges, programs, and student records in one place.
               </p>
             </div>
           </div>
