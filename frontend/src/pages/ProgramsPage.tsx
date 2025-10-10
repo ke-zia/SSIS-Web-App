@@ -21,7 +21,7 @@ import {
   CardContent
 } from "../components/ui/card";
 import { Program } from "../types/program";
-import { College } from "../types/college";
+import { College, PaginatedColleges } from "../types/college";
 import {
   getAllPrograms,
   deleteProgram,
@@ -48,6 +48,14 @@ import { debounce } from "../utils/helpers";
 const ProgramsPage: React.FC = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 5,
+    total: 0,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false
+  });
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,7 +63,7 @@ const ProgramsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination state
+  // Pagination state (aligned with backend)
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
 
@@ -85,13 +93,20 @@ const ProgramsPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getAllPrograms(
+      const response = await getAllPrograms(
+        currentPage,
+        entriesPerPage,
         sortBy || undefined,
         sortBy ? sortOrder : undefined,
         searchQuery || undefined,
         searchBy
       );
-      setPrograms(data);
+      setPrograms(response.programs);
+      setPagination(response.pagination);
+      
+      // Update current page to match backend response
+      setCurrentPage(response.pagination.page);
+      setEntriesPerPage(response.pagination.per_page);
     } catch (err) {
       console.error("Failed to fetch programs:", err);
       setError("Failed to load programs. Please try again.");
@@ -102,8 +117,10 @@ const ProgramsPage: React.FC = () => {
 
   const fetchColleges = async () => {
     try {
-      const data = await getAllColleges();
-      setColleges(data);
+      // Request a large per_page so we get all colleges for the dropdown
+      // (backend is paginated; default calls returned only first page -> 10 items)
+      const response: PaginatedColleges = await getAllColleges(1, 1000);
+      setColleges(response.colleges);
     } catch (err) {
       console.error("Failed to fetch colleges:", err);
     }
@@ -115,7 +132,7 @@ const ProgramsPage: React.FC = () => {
 
   useEffect(() => {
     fetchPrograms();
-  }, [sortBy, sortOrder, searchQuery, searchBy]);
+  }, [currentPage, entriesPerPage, sortBy, sortOrder, searchQuery, searchBy]);
 
   const openAddDialog = () => {
     setSelectedProgram(null);
@@ -187,6 +204,7 @@ const ProgramsPage: React.FC = () => {
       setSortBy("");
       setSortOrder("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
   const columns = useMemo<ColumnDef<Program>[]>(
@@ -287,19 +305,13 @@ const ProgramsPage: React.FC = () => {
     [sortBy, sortOrder, colleges] // IMPORTANT: Add colleges to dependencies
   );
 
-  // Note: Filtering is now handled by the backend
-  // Programs are already filtered when received from the API
+  // Programs are already paginated by backend
   const filteredPrograms = programs;
+  const displayTotal = pagination.total;
 
-  // Calculate pagination
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const paginatedPrograms = filteredPrograms.slice(startIndex, endIndex);
-  const displayTotal = filteredPrograms.length;
-
-  // Update table with paginated data
+  // Update table with paginated data from backend
   const table = useReactTable({
-    data: paginatedPrograms,
+    data: filteredPrograms,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -331,10 +343,10 @@ const ProgramsPage: React.FC = () => {
     }, 3000);
   };
 
-  // Custom pagination component for 1-2-3 style
+  // Custom pagination component for 1-2-3 style using backend pagination data
   const CustomPagination = () => {
-    const totalPages = Math.ceil(displayTotal / entriesPerPage) || 1;
-    const startEntry = displayTotal === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+    const totalPages = pagination.total_pages || 1;
+    const startEntry = displayTotal === 0 ? 0 : ((currentPage - 1) * entriesPerPage) + 1;
     const endEntry = Math.min(currentPage * entriesPerPage, displayTotal);
 
     // Generate page numbers to show (1, 2, 3 style)
@@ -370,7 +382,7 @@ const ProgramsPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1 || isLoading || displayTotal === 0}
+            disabled={!pagination.has_prev || isLoading || displayTotal === 0}
             className="h-8 px-2 gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -396,7 +408,7 @@ const ProgramsPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages || displayTotal === 0 || isLoading}
+            disabled={!pagination.has_next || displayTotal === 0 || isLoading}
             className="h-8 px-2 gap-1"
           >
             Next
@@ -445,7 +457,7 @@ const ProgramsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Programs</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{programs.length}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{pagination.total}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-red-50">
                   <GraduationCap className="h-6 w-6 text-red-600" />
@@ -659,4 +671,3 @@ const ProgramsPage: React.FC = () => {
 };
 
 export default ProgramsPage;
-

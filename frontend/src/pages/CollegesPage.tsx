@@ -43,6 +43,14 @@ import { debounce } from "../utils/helpers";
 
 const CollegesPage: React.FC = () => {
   const [colleges, setColleges] = useState<College[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 5,
+    total: 0,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false
+  });
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +58,7 @@ const CollegesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination state
+  // Pagination state (aligned with backend)
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
 
@@ -80,13 +88,20 @@ const CollegesPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getAllColleges(
+      const response = await getAllColleges(
+        currentPage,
+        entriesPerPage,
         sortBy || undefined,
         sortBy ? sortOrder : undefined,
         searchQuery || undefined,
         searchBy
       );
-      setColleges(data);
+      setColleges(response.colleges);
+      setPagination(response.pagination);
+      
+      // Update current page to match backend response
+      setCurrentPage(response.pagination.page);
+      setEntriesPerPage(response.pagination.per_page);
     } catch (err) {
       console.error("Failed to fetch colleges:", err);
       setError("Failed to load colleges. Please try again.");
@@ -97,7 +112,7 @@ const CollegesPage: React.FC = () => {
 
   useEffect(() => {
     fetchColleges();
-  }, [sortBy, sortOrder, searchQuery, searchBy]);
+  }, [currentPage, entriesPerPage, sortBy, sortOrder, searchQuery, searchBy]);
 
   const openAddDialog = () => {
     setSelectedCollege(null);
@@ -169,6 +184,7 @@ const CollegesPage: React.FC = () => {
       setSortBy("");
       setSortOrder("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
   const columns = useMemo<ColumnDef<College>[]>(
@@ -244,19 +260,13 @@ const CollegesPage: React.FC = () => {
     [sortBy, sortOrder]
   );
 
-  // Note: Filtering is now handled by the backend
-  // Colleges are already filtered when received from the API
+  // Colleges are already paginated by backend
   const filteredColleges = colleges;
+  const displayTotal = pagination.total;
 
-  // Calculate pagination
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const paginatedColleges = filteredColleges.slice(startIndex, endIndex);
-  const displayTotal = filteredColleges.length;
-
-  // Update table with paginated data
+  // Update table with paginated data from backend
   const table = useReactTable({
-    data: paginatedColleges,
+    data: filteredColleges,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -273,12 +283,12 @@ const CollegesPage: React.FC = () => {
   const handleEntriesPerPageChange = (value: string) => {
     const newEntries = parseInt(value);
     setEntriesPerPage(newEntries);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when entries per page changes
   };
 
   const handleSearchByChange = (value: string) => {
     setSearchBy(value as "all" | "code" | "name");
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when search criteria changes
   };
 
   const showSuccessToast = (message: string) => {
@@ -288,10 +298,10 @@ const CollegesPage: React.FC = () => {
     }, 3000);
   };
 
-  // Custom pagination component for 1-2-3 style
+  // Custom pagination component for 1-2-3 style using backend pagination data
   const CustomPagination = () => {
-    const totalPages = Math.ceil(displayTotal / entriesPerPage) || 1;
-    const startEntry = displayTotal === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+    const totalPages = pagination.total_pages || 1;
+    const startEntry = displayTotal === 0 ? 0 : ((currentPage - 1) * entriesPerPage) + 1;
     const endEntry = Math.min(currentPage * entriesPerPage, displayTotal);
 
     // Generate page numbers to show (1, 2, 3 style)
@@ -327,7 +337,7 @@ const CollegesPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1 || isLoading || displayTotal === 0}
+            disabled={!pagination.has_prev || isLoading || displayTotal === 0}
             className="h-8 px-2 gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -353,7 +363,7 @@ const CollegesPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages || displayTotal === 0 || isLoading}
+            disabled={!pagination.has_next || displayTotal === 0 || isLoading}
             className="h-8 px-2 gap-1"
           >
             Next
@@ -402,7 +412,7 @@ const CollegesPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Colleges</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{colleges.length}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{pagination.total}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-red-50">
                   <Building2 className="h-6 w-6 text-red-600" />

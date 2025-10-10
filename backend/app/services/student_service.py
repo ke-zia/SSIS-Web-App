@@ -18,22 +18,26 @@ class StudentService:
 
     @staticmethod
     def list_all(
+        page: int = 1,
+        per_page: int = 10,
         sort_by: str = "",
         order: str = "asc",
         search: str = "",
         search_by: str = "all"
     ) -> Dict:
         """
-        Retrieve all students with optional sorting and search filtering.
+        Retrieve students with pagination, optional sorting and search filtering.
 
         Args:
+            page: Page number (1-indexed)
+            per_page: Number of items per page
             sort_by: Column to sort by
             order: Sort order ('asc' or 'desc')
             search: Search query string
             search_by: Column to search in
 
         Returns:
-            Dict with 'data' (list of student dicts) or 'error' and 'status'
+            Dict with paginated data, total count, and pagination metadata
         """
         try:
             from sqlalchemy import or_
@@ -49,7 +53,6 @@ class StudentService:
                             Student.id.ilike(search_lower),
                             Student.first_name.ilike(search_lower),
                             Student.last_name.ilike(search_lower),
-                            Program.name.ilike(search_lower),
                             Program.code.ilike(search_lower),
                             Student.gender.ilike(search_lower),
                             db.func.cast(Student.year_level, db.String).ilike(search_lower)
@@ -62,16 +65,14 @@ class StudentService:
                 elif search_by == "last_name":
                     query = query.filter(Student.last_name.ilike(search_lower))
                 elif search_by == "program":
-                    query = query.filter(
-                        or_(
-                            Program.name.ilike(search_lower),
-                            Program.code.ilike(search_lower)
-                        )
-                    )
+                    query = query.filter(Program.code.ilike(search_lower))
                 elif search_by == "year_level":
                     query = query.filter(db.func.cast(Student.year_level, db.String).ilike(search_lower))
                 elif search_by == "gender":
                     query = query.filter(Student.gender.ilike(search_lower))
+            
+            # Get total count before pagination
+            total = query.count()
             
             # Apply sorting
             if sort_by:
@@ -92,9 +93,9 @@ class StudentService:
                         query = query.order_by(Student.last_name.asc())
                 elif sort_by == "program":
                     if order == "desc":
-                        query = query.order_by(db.func.coalesce(Program.name, "").desc())
+                        query = query.order_by(db.func.coalesce(Program.code, "").desc())
                     else:
-                        query = query.order_by(db.func.coalesce(Program.name, "").asc())
+                        query = query.order_by(db.func.coalesce(Program.code, "").asc())
                 elif sort_by == "year_level":
                     if order == "desc":
                         query = query.order_by(Student.year_level.desc())
@@ -106,15 +107,32 @@ class StudentService:
                     else:
                         query = query.order_by(Student.gender.asc())
             
-            students = query.all()
+            # Apply pagination
+            offset = (page - 1) * per_page
+            students = query.offset(offset).limit(per_page).all()
+            
+            # Calculate pagination metadata
+            total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+            has_next = page < total_pages
+            has_prev = page > 1
+            
             return {
                 "data": [student.to_dict() for student in students],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "total_pages": total_pages,
+                    "has_next": has_next,
+                    "has_prev": has_prev
+                },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
         except Exception as e:
             return {
                 "data": None,
+                "pagination": None,
                 "error": "Failed to retrieve students.",
                 "status": HTTPStatus.INTERNAL_SERVER_ERROR,
             }

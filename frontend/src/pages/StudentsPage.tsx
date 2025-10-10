@@ -1,3 +1,4 @@
+// (updated) fetchPrograms and program cell mapping
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ColumnDef,
@@ -21,7 +22,8 @@ import {
   CardContent
 } from "../components/ui/card";
 import { Student } from "../types/student";
-import { College } from "../types/college";
+import { College, PaginatedColleges } from "../types/college";
+import { Program, PaginatedPrograms } from "../types/program";
 import {
   getAllStudents,
   deleteStudent,
@@ -45,12 +47,19 @@ import {
 } from "lucide-react";
 import { debounce } from "../utils/helpers";
 import { getAllPrograms } from "../services/programService";
-import { Program } from "../types/program";
 
 const StudentsPage: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 5,
+    total: 0,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false
+  });
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,7 +67,7 @@ const StudentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination state
+  // Pagination state (aligned with backend)
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
 
@@ -88,13 +97,20 @@ const StudentsPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getAllStudents(
+      const response = await getAllStudents(
+        currentPage,
+        entriesPerPage,
         sortBy || undefined,
         sortBy ? sortOrder : undefined,
         searchQuery || undefined,
         searchBy
       );
-      setStudents(data);
+      setStudents(response.students);
+      setPagination(response.pagination);
+      
+      // Update current page to match backend response
+      setCurrentPage(response.pagination.page);
+      setEntriesPerPage(response.pagination.per_page);
     } catch (err) {
       console.error("Failed to fetch students:", err);
       setError("Failed to load students. Please try again.");
@@ -105,8 +121,8 @@ const StudentsPage: React.FC = () => {
 
   const fetchColleges = async () => {
     try {
-      const data = await getAllColleges();
-      setColleges(data);
+      const response: PaginatedColleges = await getAllColleges(1, 1000);
+      setColleges(response.colleges);
     } catch (err) {
       console.error("Failed to fetch colleges:", err);
     }
@@ -114,8 +130,9 @@ const StudentsPage: React.FC = () => {
 
   const fetchPrograms = async () => {
     try {
-      const data = await getAllPrograms();
-      setPrograms(data);
+      // Request all programs for reliable lookups & pre-filling
+      const response: PaginatedPrograms = await getAllPrograms(1, 1000);
+      setPrograms(response.programs);
     } catch (err) {
       console.error("Failed to fetch programs:", err);
     }
@@ -128,7 +145,7 @@ const StudentsPage: React.FC = () => {
 
   useEffect(() => {
     fetchStudents();
-  }, [sortBy, sortOrder, searchQuery, searchBy]);
+  }, [currentPage, entriesPerPage, sortBy, sortOrder, searchQuery, searchBy]);
 
   const openAddDialog = () => {
     setSelectedStudent(null);
@@ -200,10 +217,10 @@ const StudentsPage: React.FC = () => {
       setSortBy("");
       setSortOrder("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
-  const columns = useMemo<ColumnDef<Student>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<Student>[]>(() => [
       {
         accessorKey: "id",
         header: () => (
@@ -271,8 +288,10 @@ const StudentsPage: React.FC = () => {
         ),
         cell: ({ row }) => {
           const programId = row.getValue("program_id") as number | null;
-          const program = programs.find(p => p.id === programId);
-          const programCode = program?.code || "Not Applicable";
+          // Prefer program_code returned with the student record (immediate), else fallback to programs[] lookup
+          const student = row.original as Student;
+          const programFromList = programs.find(p => p.id === programId);
+          const programCode = student.program_code || programFromList?.code || "Not Applicable";
 
           return (
             <div className={`text-gray-700 ${programCode === "Not Applicable" ? "italic text-gray-400" : ""}`}>
@@ -347,21 +366,15 @@ const StudentsPage: React.FC = () => {
         size: 100,
         enableSorting: false,
       },
-    ],
-    [sortBy, sortOrder, programs]
-  );
+    ], [sortBy, sortOrder, programs]);
 
+  // Programs are already paginated by backend
   const filteredStudents = students;
+  const displayTotal = pagination.total;
 
-  // Calculate pagination
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const paginatedStudents = filteredStudents.slice(startIndex, endIndex);
-  const displayTotal = filteredStudents.length;
-
-  // Update table with paginated data
+  // Update table with paginated data from backend
   const table = useReactTable({
-    data: paginatedStudents,
+    data: filteredStudents,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -393,10 +406,10 @@ const StudentsPage: React.FC = () => {
     }, 3000);
   };
 
-  // Custom pagination component
+  // Custom pagination component using backend pagination data
   const CustomPagination = () => {
-    const totalPages = Math.ceil(displayTotal / entriesPerPage) || 1;
-    const startEntry = displayTotal === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+    const totalPages = pagination.total_pages || 1;
+    const startEntry = displayTotal === 0 ? 0 : ((currentPage - 1) * entriesPerPage) + 1;
     const endEntry = Math.min(currentPage * entriesPerPage, displayTotal);
 
     // Generate page numbers to show (1, 2, 3 style)
@@ -432,7 +445,7 @@ const StudentsPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1 || isLoading || displayTotal === 0}
+            disabled={!pagination.has_prev || isLoading || displayTotal === 0}
             className="h-8 px-2 gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -458,7 +471,7 @@ const StudentsPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages || displayTotal === 0 || isLoading}
+            disabled={!pagination.has_next || displayTotal === 0 || isLoading}
             className="h-8 px-2 gap-1"
           >
             Next
@@ -507,7 +520,7 @@ const StudentsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Students</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{students.length}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{pagination.total}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-red-50">
                   <Users className="h-6 w-6 text-red-600" />
@@ -560,7 +573,7 @@ const StudentsPage: React.FC = () => {
                     className="w-[150px] border-gray-300 h-9 text-sm"
                   >
                     <option value="all">Search by</option>
-                    <option value="id">ID</option>
+                    <option value="id">ID Number</option>
                     <option value="first_name">First Name</option>
                     <option value="last_name">Last Name</option>
                     <option value="program">Program</option>
@@ -693,7 +706,7 @@ const StudentsPage: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <div className="p-4">
             <CustomPagination />
           </div>
         </Card>

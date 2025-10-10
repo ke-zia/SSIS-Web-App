@@ -1,7 +1,5 @@
-"""Service layer for college operations."""
-
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from sqlalchemy.exc import IntegrityError
 
@@ -14,21 +12,30 @@ class CollegeService:
     """Service for managing college operations."""
 
     @staticmethod
-    def list_all(sort_by: str = "", order: str = "asc", search: str = "", search_by: str = "all") -> Dict:
+    def list_all(
+        page: int = 1,
+        per_page: int = 10,
+        sort_by: str = "",
+        order: str = "asc",
+        search: str = "",
+        search_by: str = "all"
+    ) -> Dict:
         """
-        Retrieve all colleges with optional sorting and search filtering.
+        Retrieve colleges with pagination, optional sorting and search filtering.
 
         Args:
+            page: Page number (1-indexed)
+            per_page: Number of items per page
             sort_by: Column to sort by ('code' or 'name'). Empty string means no sorting.
             order: Sort order ('asc' or 'desc'). Defaults to 'asc'.
             search: Search query string. Empty string means no filtering.
             search_by: Column to search in ('all', 'code', or 'name'). Defaults to 'all'.
 
         Returns:
-            Dict with 'data' (list of college dicts) or 'error' and 'status'
+            Dict with paginated data, total count, and pagination metadata
         """
         try:
-            from sqlalchemy import or_
+            from sqlalchemy import or_, func
             
             query = College.query
             
@@ -50,6 +57,9 @@ class CollegeService:
                     # Search only in name
                     query = query.filter(College.name.ilike(search_lower))
             
+            # Get total count before pagination
+            total = query.count()
+            
             # Apply sorting if sort_by is provided
             if sort_by:
                 if sort_by == "code":
@@ -63,15 +73,32 @@ class CollegeService:
                     else:
                         query = query.order_by(College.name.asc())
             
-            colleges = query.all()
+            # Apply pagination
+            offset = (page - 1) * per_page
+            colleges = query.offset(offset).limit(per_page).all()
+            
+            # Calculate pagination metadata
+            total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+            has_next = page < total_pages
+            has_prev = page > 1
+            
             return {
                 "data": [college.to_dict() for college in colleges],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "total_pages": total_pages,
+                    "has_next": has_next,
+                    "has_prev": has_prev
+                },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
         except Exception as e:
             return {
                 "data": None,
+                "pagination": None,
                 "error": "Failed to retrieve colleges.",
                 "status": HTTPStatus.INTERNAL_SERVER_ERROR,
             }

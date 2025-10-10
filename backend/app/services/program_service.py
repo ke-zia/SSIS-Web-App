@@ -15,22 +15,26 @@ class ProgramService:
 
     @staticmethod
     def list_all(
+        page: int = 1,
+        per_page: int = 10,
         sort_by: str = "",
         order: str = "asc",
         search: str = "",
         search_by: str = "all"
     ) -> Dict:
         """
-        Retrieve all programs with optional sorting and search filtering.
+        Retrieve programs with pagination, optional sorting and search filtering.
 
         Args:
+            page: Page number (1-indexed)
+            per_page: Number of items per page
             sort_by: Column to sort by ('code' or 'name'). Empty string means no sorting.
-            order: Sort order ('asc' or 'desc'). Defaults to 'asc'. Only used when sort_by is provided.
+            order: Sort order ('asc' or 'desc'). Defaults to 'asc'.
             search: Search query string. Empty string means no filtering.
             search_by: Column to search in ('all', 'code', 'name', or 'college'). Defaults to 'all'.
 
         Returns:
-            Dict with 'data' (list of program dicts) or 'error' and 'status'
+            Dict with paginated data, total count, and pagination metadata
         """
         try:
             from sqlalchemy import or_
@@ -46,8 +50,7 @@ class ProgramService:
                         or_(
                             Program.code.ilike(search_lower),
                             Program.name.ilike(search_lower),
-                            College.name.ilike(search_lower),
-                            College.code.ilike(search_lower)  # ADDED: Search by college code too
+                            College.code.ilike(search_lower)
                         )
                     )
                 elif search_by == "code":
@@ -58,12 +61,10 @@ class ProgramService:
                     query = query.filter(Program.name.ilike(search_lower))
                 elif search_by == "college":
                     # Search in both college name AND college code
-                    query = query.filter(
-                        or_(
-                            College.name.ilike(search_lower),
-                            College.code.ilike(search_lower)  
-                        )
-                    )
+                    query = query.filter(College.code.ilike(search_lower))
+            
+            # Get total count before pagination
+            total = query.count()
             
             # Apply sorting ONLY if sort_by is provided and valid
             if sort_by:
@@ -81,20 +82,37 @@ class ProgramService:
                     # Sort by college name using outer join
                     if order == "desc":
                         # NULL values will sort last when descending
-                        query = query.order_by(db.func.coalesce(College.name, "").desc())
+                        query = query.order_by(db.func.coalesce(College.code, "").desc())
                     else:
                         # NULL values will sort first when ascending
-                        query = query.order_by(db.func.coalesce(College.name, "").asc())
+                        query = query.order_by(db.func.coalesce(College.code, "").asc())
+
+            # Apply pagination
+            offset = (page - 1) * per_page
+            programs = query.offset(offset).limit(per_page).all()
             
-            programs = query.all()
+            # Calculate pagination metadata
+            total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+            has_next = page < total_pages
+            has_prev = page > 1
+            
             return {
                 "data": [program.to_dict() for program in programs],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "total_pages": total_pages,
+                    "has_next": has_next,
+                    "has_prev": has_prev
+                },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
         except Exception as e:
             return {
                 "data": None,
+                "pagination": None,
                 "error": "Failed to retrieve programs.",
                 "status": HTTPStatus.INTERNAL_SERVER_ERROR,
             }

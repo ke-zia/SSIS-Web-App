@@ -11,7 +11,19 @@ colleges_bp = Blueprint("colleges", __name__)
 
 @colleges_bp.get("")
 def list_colleges():
-    """GET /colleges - return all colleges with optional sorting and search."""
+    """GET /colleges - return paginated colleges with optional sorting and search."""
+    # Get pagination parameters from query string
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 10))
+    except ValueError:
+        page = 1
+        per_page = 10
+    
+    # Ensure page and per_page are valid
+    page = max(1, page)
+    per_page = max(1, min(per_page, 100))  # Limit per_page to 100
+    
     # Get sorting parameters from query string
     sort_by = request.args.get("sort_by", "").strip()
     order = request.args.get("order", "asc").strip().lower()
@@ -28,10 +40,22 @@ def list_colleges():
     if search_by not in ["all", "code", "name"]:
         search_by = "all"
     
-    result = CollegeService.list_all(sort_by=sort_by, order=order, search=search, search_by=search_by)
+    result = CollegeService.list_all(
+        page=page,
+        per_page=per_page,
+        sort_by=sort_by,
+        order=order,
+        search=search,
+        search_by=search_by
+    )
+    
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
-    return jsonify(result["data"]), HTTPStatus.OK
+    
+    return jsonify({
+        "colleges": result["data"],
+        "pagination": result["pagination"]
+    }), HTTPStatus.OK
 
 
 @colleges_bp.post("")
@@ -67,4 +91,3 @@ def delete_college(college_id: int):
         return jsonify({"message": result["error"]}), result["status"]
 
     return ("", HTTPStatus.NO_CONTENT)
-

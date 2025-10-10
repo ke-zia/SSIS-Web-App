@@ -8,3 +8,15 @@ export interface Student {
   year_level: number;
   gender: string;
 }
+
+export interface PaginatedStudents {
+  students: Student[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}

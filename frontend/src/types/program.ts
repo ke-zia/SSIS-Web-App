@@ -9,4 +9,14 @@ export interface Program {
   name: string;
 }
 
-
+export interface PaginatedPrograms {
+  programs: Program[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
