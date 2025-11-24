@@ -8,6 +8,9 @@ class Student(db.Model):
 
     __tablename__ = "students"
 
+    # Optional photo path (stored in Supabase storage) - nullable
+    photo = db.Column(db.String(255), nullable=True)
+
     id = db.Column(db.String(20), primary_key=True)  # Format: NNNN-NNNN
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
@@ -26,8 +29,10 @@ class Student(db.Model):
             "last_name": self.last_name,
             "program_id": self.program_id,
             "program_name": self.program.name if self.program else "Not Applicable",
+            "program_code": self.program.code if self.program else "Not Applicable",
             "year_level": self.year_level,
             "gender": self.gender,
+            "photo": self.photo,
         }
 
     def __repr__(self):

@@ -22,7 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_programs_code ON programs(code);
 CREATE INDEX IF NOT EXISTS idx_programs_college_id ON programs(college_id);
 
 -- Create students table
+-- NOTE: photo column stores the storage path/filename in Supabase (nullable).
 CREATE TABLE IF NOT EXISTS students (
+    photo VARCHAR(255),
     id VARCHAR(20) PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,

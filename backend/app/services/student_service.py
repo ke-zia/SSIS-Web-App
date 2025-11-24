@@ -27,17 +27,6 @@ class StudentService:
     ) -> Dict:
         """
         Retrieve students with pagination, optional sorting and search filtering.
-
-        Args:
-            page: Page number (1-indexed)
-            per_page: Number of items per page
-            sort_by: Column to sort by
-            order: Sort order ('asc' or 'desc')
-            search: Search query string
-            search_by: Column to search in
-
-        Returns:
-            Dict with paginated data, total count, and pagination metadata
         """
         try:
             from sqlalchemy import or_
@@ -167,6 +156,7 @@ class StudentService:
         program_id = data.get("program_id")
         year_level = data.get("year_level")
         gender = (data.get("gender") or "").strip()
+        photo = (data.get("photo") or None)
 
         # Validate student ID format
         if not re.match(r'^\d{4}-\d{4}$', student_id):
@@ -238,7 +228,8 @@ class StudentService:
             last_name=last_name,
             program_id=program_id,
             year_level=year_level,
-            gender=gender
+            gender=gender,
+            photo=photo
         )
 
         try:
@@ -284,6 +275,7 @@ class StudentService:
         program_id = data.get("program_id")
         year_level = data.get("year_level")
         gender = data.get("gender", "").strip() if data.get("gender") else None
+        photo = data.get("photo") if "photo" in data else None  # explicit
 
         # If ID is being changed, validate the new ID
         if new_student_id and new_student_id != student_id:
@@ -369,6 +361,14 @@ class StudentService:
                 }
             student.gender = gender
 
+        # Photo handling: if photo provided explicitly in payload, set it (can be None/empty to remove)
+        if "photo" in data:
+            # Accept empty string or None to clear
+            if photo in ("", None):
+                student.photo = None
+            else:
+                student.photo = photo
+
         try:
             # If ID is being changed, we need to handle it specially
             if new_student_id and new_student_id != student_id:
@@ -382,7 +382,8 @@ class StudentService:
                     last_name=student.last_name,
                     program_id=student.program_id,
                     year_level=student.year_level,
-                    gender=student.gender
+                    gender=student.gender,
+                    photo=student.photo
                 )
                 db.session.add(new_student)
                 db.session.commit()

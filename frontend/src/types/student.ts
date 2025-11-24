@@ -7,6 +7,9 @@ export interface Student {
   program_code: string;
   year_level: number;
   gender: string;
+  // optional stored photo path (Supabase storage path) and computed public URL
+  photo?: string | null;
+  photo_url?: string | null;
 }
 
 export interface PaginatedStudents {

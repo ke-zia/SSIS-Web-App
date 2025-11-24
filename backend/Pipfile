@@ -10,6 +10,7 @@ flask-cors = "*"
 flask-sqlalchemy = "*"
 psycopg2-binary = "*"
 pyjwt = "*"
+requests = "*"
 
 [dev-packages]
 

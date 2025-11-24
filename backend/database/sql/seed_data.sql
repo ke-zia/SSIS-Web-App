@@ -1,5 +1,8 @@
+-- ============================================
+-- COLLEGES (73 colleges - original 23 + 50 new)
+-- ============================================
 INSERT INTO colleges (code, name) VALUES
--- Engineering Colleges
+-- Original 23 colleges
 ('COE', 'College of Engineering'),
 ('CSM', 'College of Science and Mathematics'),
 ('CAS', 'College of Arts and Sciences'),
@@ -22,279 +25,753 @@ INSERT INTO colleges (code, name) VALUES
 ('SS', 'College of Social Sciences'),
 ('ICT', 'College of Information and Communications Technology'),
 ('COGS', 'College of Graduate Studies'),
-('COL', 'College of Law and Governance');
+('COL', 'College of Law and Governance'),
+
+-- 50 Additional Colleges
+('COAT', 'College of Agriculture and Technology'),
+('CODM', 'College of Design and Multimedia'),
+('COHM', 'College of Hotel and Restaurant Management'),
+('COMT', 'College of Maritime Transportation'),
+('COAE', 'College of Aeronautical Engineering'),
+('COCE', 'College of Civil Engineering'),
+('COEE', 'College of Electronics Engineering'),
+('COIE', 'College of Industrial Engineering'),
+('COMSE', 'College of Materials Science Engineering'),
+('COPE', 'College of Petroleum Engineering'),
+('COGE', 'College of Geodetic Engineering'),
+('COENV', 'College of Environmental Engineering'),
+('COFST', 'College of Food Science and Technology'),
+('CONUT', 'College of Nutrition and Dietetics'),
+('COPHY', 'College of Physical Therapy'),
+('COOC', 'College of Occupational Therapy'),
+('CORAD', 'College of Radiologic Technology'),
+('COSPT', 'College of Sports Science'),
+('COTHM', 'College of Tourism and Hospitality Management'),
+('COAVI', 'College of Aviation'),
+('COMAR', 'College of Marine Sciences'),
+('COFIS', 'College of Fisheries'),
+('COAQU', 'College of Aquaculture'),
+('COSAF', 'College of Safety Engineering'),
+('COMIN', 'College of Mining Engineering'),
+('COMET', 'College of Metallurgical Engineering'),
+('COTEXT', 'College of Textile Engineering'),
+('COCER', 'College of Ceramics Engineering'),
+('COBIO', 'College of Biomedical Engineering'),
+('CONANO', 'College of Nanotechnology'),
+('COROB', 'College of Robotics Engineering'),
+('COAI', 'College of Artificial Intelligence'),
+('CODS', 'College of Data Science'),
+('COCYB', 'College of Cybersecurity'),
+('COGAME', 'College of Game Development'),
+('COANI', 'College of Animation'),
+('COFILM', 'College of Film and Television'),
+('CORADIO', 'College of Radio and Broadcasting'),
+('COFASH', 'College of Fashion Design'),
+('COINDU', 'College of Industrial Design'),
+('COGRAP', 'College of Graphic Design'),
+('COPHOTO', 'College of Photography'),
+('COMUSE', 'College of Museum Studies'),
+('COARCH', 'College of Archeology'),
+('COANTH', 'College of Anthropology'),
+('COLING', 'College of Linguistics'),
+('COPHIL', 'College of Philosophy'),
+('COTHEO', 'College of Theology'),
+('COSEM', 'College of Seminary Studies'),
+('COMISS', 'College of Mission Studies');
 
 -- ============================================
--- PROGRAMS (45 programs)
+-- PROGRAMS (95 programs - original 45 + 50 new)
 -- ============================================
 INSERT INTO programs (college_id, code, name) VALUES
--- College of Engineering (COE) programs
+-- Original 45 programs
 (1, 'BSCE', 'Bachelor of Science in Civil Engineering'),
 (1, 'BSCpE', 'Bachelor of Science in Computer Engineering'),
 (1, 'BSEE', 'Bachelor of Science in Electrical Engineering'),
 (1, 'BSME', 'Bachelor of Science in Mechanical Engineering'),
 (1, 'BSChE', 'Bachelor of Science in Chemical Engineering'),
 (1, 'BSCS', 'Bachelor of Science in Computer Science'),
-
--- College of Science and Mathematics (CSM) programs
 (2, 'BSBio', 'Bachelor of Science in Biology'),
 (2, 'BSChem', 'Bachelor of Science in Chemistry'),
 (2, 'BSMath', 'Bachelor of Science in Mathematics'),
 (2, 'BSPhysics', 'Bachelor of Science in Physics'),
 (2, 'BSStat', 'Bachelor of Science in Statistics'),
-
--- College of Arts and Sciences (CAS) programs
 (3, 'BAPsych', 'Bachelor of Arts in Psychology'),
 (3, 'BAComm', 'Bachelor of Arts in Communication'),
 (3, 'BASocio', 'Bachelor of Arts in Sociology'),
 (3, 'BAEnglish', 'Bachelor of Arts in English'),
-
--- College of Business Administration (CBA) programs
 (4, 'BSBA-MKT', 'Bachelor of Science in Business Administration - Marketing'),
 (4, 'BSBA-FIN', 'Bachelor of Science in Business Administration - Finance'),
 (4, 'BSBA-HRM', 'Bachelor of Science in Business Administration - Human Resource Management'),
 (4, 'BSA', 'Bachelor of Science in Accountancy'),
 (4, 'BS-Entrep', 'Bachelor of Science in Entrepreneurship'),
-
--- College of Education (CED) programs
 (5, 'BEEd', 'Bachelor of Elementary Education'),
 (5, 'BSEd-English', 'Bachelor of Secondary Education - English'),
 (5, 'BSEd-Math', 'Bachelor of Secondary Education - Mathematics'),
 (5, 'BSEd-Science', 'Bachelor of Secondary Education - Science'),
-
--- College of Nursing (CON) programs
 (6, 'BSN', 'Bachelor of Science in Nursing'),
 (6, 'BS-Midwifery', 'Bachelor of Science in Midwifery'),
-
--- College of Medicine (COM) programs
 (7, 'MD', 'Doctor of Medicine'),
 (7, 'BS-MedicalTech', 'Bachelor of Science in Medical Technology'),
-
--- College of Architecture (COA) programs
 (8, 'BSArch', 'Bachelor of Science in Architecture'),
 (8, 'BS-ID', 'Bachelor of Science in Interior Design'),
-
--- College of Law (LAW) programs
 (9, 'JD', 'Juris Doctor'),
-
--- College of Forestry (COF) programs
 (10, 'BSF', 'Bachelor of Science in Forestry'),
 (10, 'BS-EnvSci', 'Bachelor of Science in Environmental Science'),
-
--- College of Social Sciences (COS) programs
 (11, 'BA-PolSci', 'Bachelor of Arts in Political Science'),
 (11, 'BA-History', 'Bachelor of Arts in History'),
-
--- College of Public Health (COPH) programs
 (12, 'BSPH', 'Bachelor of Science in Public Health'),
-
--- College of Dentistry (COD) programs
 (13, 'DMD', 'Doctor of Dental Medicine'),
-
--- College of Pharmacy (COP) programs
 (14, 'BSPharm', 'Bachelor of Science in Pharmacy'),
-
--- College of Veterinary Medicine (COV) programs
 (15, 'DVM', 'Doctor of Veterinary Medicine'),
-
--- College of Music (MUS) programs
 (16, 'BM-Music', 'Bachelor of Music'),
 (16, 'BM-Performance', 'Bachelor of Music in Performance'),
-
--- College of Fine and Applied Arts (FAA) programs
 (17, 'BFA-Visual', 'Bachelor of Fine Arts in Visual Arts'),
 (17, 'BFA-Theater', 'Bachelor of Fine Arts in Theater Arts'),
-
--- College of Information and Communications Technology (ICT) programs
 (21, 'BSIT', 'Bachelor of Science in Information Technology'),
-(21, 'BSIS', 'Bachelor of Science in Information Systems');
+(21, 'BSIS', 'Bachelor of Science in Information Systems'),
+
+-- 50 Additional Programs
+-- Agriculture and Technology programs
+(24, 'BSAGRI', 'Bachelor of Science in Agriculture'),
+(24, 'BSAGRIB', 'Bachelor of Science in Agribusiness'),
+(24, 'BSHORT', 'Bachelor of Science in Horticulture'),
+
+-- Design and Multimedia programs
+(25, 'BSMM', 'Bachelor of Science in Multimedia Arts'),
+(25, 'BSGD', 'Bachelor of Science in Graphic Design'),
+(25, 'BSWD', 'Bachelor of Science in Web Design'),
+
+-- Hotel and Restaurant Management programs
+(26, 'BSHRM', 'Bachelor of Science in Hotel and Restaurant Management'),
+(26, 'BSTM', 'Bachelor of Science in Tourism Management'),
+(26, 'BSCUL', 'Bachelor of Science in Culinary Arts'),
+
+-- Maritime Transportation programs
+(27, 'BSMT', 'Bachelor of Science in Marine Transportation'),
+(27, 'BSMarE', 'Bachelor of Science in Marine Engineering'),
+
+-- Aeronautical Engineering programs
+(28, 'BSAeroE', 'Bachelor of Science in Aeronautical Engineering'),
+(28, 'BSPilot', 'Bachelor of Science in Professional Flight'),
+
+-- Civil Engineering Specializations
+(29, 'BSCE-ST', 'Bachelor of Science in Civil Engineering - Structural'),
+(29, 'BSCE-TE', 'Bachelor of Science in Civil Engineering - Transportation'),
+
+-- Electronics Engineering programs
+(30, 'BSECE', 'Bachelor of Science in Electronics Engineering'),
+(30, 'BSECE-COM', 'Bachelor of Science in Electronics Engineering - Communications'),
+
+-- Industrial Engineering programs
+(31, 'BSIE', 'Bachelor of Science in Industrial Engineering'),
+(31, 'BSEM', 'Bachelor of Science in Engineering Management'),
+
+-- Materials Science Engineering
+(32, 'BSMSE', 'Bachelor of Science in Materials Science Engineering'),
+
+-- Petroleum Engineering
+(33, 'BSPetE', 'Bachelor of Science in Petroleum Engineering'),
+
+-- Geodetic Engineering
+(34, 'BSGE', 'Bachelor of Science in Geodetic Engineering'),
+
+-- Environmental Engineering
+(35, 'BSEnvE', 'Bachelor of Science in Environmental Engineering'),
+
+-- Food Science and Technology
+(36, 'BSFST', 'Bachelor of Science in Food Science and Technology'),
+(36, 'BSFT', 'Bachelor of Science in Food Technology'),
+
+-- Nutrition and Dietetics
+(37, 'BSND', 'Bachelor of Science in Nutrition and Dietetics'),
+
+-- Physical Therapy
+(38, 'BSPT', 'Bachelor of Science in Physical Therapy'),
+
+-- Occupational Therapy
+(39, 'BSOT', 'Bachelor of Science in Occupational Therapy'),
+
+-- Radiologic Technology
+(40, 'BSRT', 'Bachelor of Science in Radiologic Technology'),
+
+-- Sports Science
+(41, 'BSSS', 'Bachelor of Science in Sports Science'),
+(41, 'BSPE', 'Bachelor of Science in Physical Education'),
+
+-- Tourism and Hospitality Management
+(42, 'BSTHM', 'Bachelor of Science in Tourism and Hospitality Management'),
+
+-- Aviation
+(43, 'BSAviaM', 'Bachelor of Science in Aviation Management'),
+
+-- Marine Sciences
+(44, 'BSMarS', 'Bachelor of Science in Marine Science'),
+(44, 'BSOCN', 'Bachelor of Science in Oceanography'),
+
+-- Fisheries
+(45, 'BSFish', 'Bachelor of Science in Fisheries'),
+
+-- Aquaculture
+(46, 'BSAqua', 'Bachelor of Science in Aquaculture'),
+
+-- Safety Engineering
+(47, 'BSSafE', 'Bachelor of Science in Safety Engineering'),
+
+-- Mining Engineering
+(48, 'BSMinE', 'Bachelor of Science in Mining Engineering'),
+
+-- Metallurgical Engineering
+(49, 'BSMetE', 'Bachelor of Science in Metallurgical Engineering'),
+
+-- Textile Engineering
+(50, 'BSTextE', 'Bachelor of Science in Textile Engineering'),
+
+-- Ceramics Engineering
+(51, 'BSCerE', 'Bachelor of Science in Ceramics Engineering'),
+
+-- Biomedical Engineering
+(52, 'BSBME', 'Bachelor of Science in Biomedical Engineering'),
+
+-- Nanotechnology
+(53, 'BSNano', 'Bachelor of Science in Nanotechnology'),
+
+-- Robotics Engineering
+(54, 'BSRobE', 'Bachelor of Science in Robotics Engineering'),
+
+-- Artificial Intelligence
+(55, 'BSAI', 'Bachelor of Science in Artificial Intelligence'),
+
+-- Data Science
+(56, 'BSDS', 'Bachelor of Science in Data Science'),
+
+-- Cybersecurity
+(57, 'BSCySec', 'Bachelor of Science in Cybersecurity'),
+
+-- Game Development
+(58, 'BSGDV', 'Bachelor of Science in Game Development'),
+
+-- Animation
+(59, 'BSAnim', 'Bachelor of Science in Animation'),
+
+-- Film and Television
+(60, 'BSFTV', 'Bachelor of Science in Film and Television');
 
 -- ============================================
--- STUDENTS (117 students)
+-- STUDENTS (617 students - original 117 + 500 new)
 -- ============================================
-INSERT INTO students (id, first_name, last_name, program_id, year_level, gender) VALUES
--- Computer Engineering Students (Year 1-5)
-('2021-0001', 'Juan', 'Dela Cruz', 2, 4, 'Male'),
-('2021-0002', 'Maria', 'Santos', 2, 4, 'Female'),
-('2022-0001', 'Jose', 'Reyes', 2, 3, 'Male'),
-('2022-0002', 'Ana', 'Gonzalez', 2, 3, 'Female'),
-('2023-0001', 'Pedro', 'Lopez', 2, 2, 'Male'),
-('2023-0002', 'Carmen', 'Torres', 2, 2, 'Female'),
-('2024-0001', 'Miguel', 'Rivera', 2, 1, 'Male'),
-('2024-0002', 'Isabel', 'Cruz', 2, 1, 'Female'),
+-- Original 117 students
+INSERT INTO students (id, first_name, last_name, program_id, year_level, gender, photo) VALUES
+('2021-0001', 'Juan', 'Dela Cruz', 2, 4, 'Male', NULL),
+('2021-0002', 'Maria', 'Santos', 2, 4, 'Female', NULL),
+('2022-0001', 'Jose', 'Reyes', 2, 3, 'Male', NULL),
+('2022-0002', 'Ana', 'Gonzalez', 2, 3, 'Female', NULL),
+('2023-0001', 'Pedro', 'Lopez', 2, 2, 'Male', NULL),
+('2023-0002', 'Carmen', 'Torres', 2, 2, 'Female', NULL),
+('2024-0001', 'Miguel', 'Rivera', 2, 1, 'Male', NULL),
+('2024-0002', 'Isabel', 'Cruz', 2, 1, 'Female', NULL),
+('2020-0001', 'Antonio', 'Mendoza', 1, 5, 'Male', NULL),
+('2021-0003', 'Elena', 'Ramos', 1, 4, 'Female', NULL),
+('2022-0003', 'Carlos', 'Sy', 1, 3, 'Male', NULL),
+('2023-0003', 'Patricia', 'Chua', 1, 2, 'Female', NULL),
+('2020-0002', 'Ricardo', 'Lim', 3, 5, 'Male', NULL),
+('2021-0004', 'Veronica', 'Tan', 3, 4, 'Female', NULL),
+('2022-0004', 'Fernando', 'Ong', 3, 3, 'Male', NULL),
+('2020-0003', 'Roberto', 'Wong', 4, 5, 'Male', NULL),
+('2021-0005', 'Sofia', 'Chan', 4, 4, 'Female', NULL),
+('2022-0005', 'Luis', 'Kwan', 4, 3, 'Male', NULL),
+('2021-0006', 'Gabriel', 'Lee', 6, 4, 'Male', NULL),
+('2022-0006', 'Catherine', 'Yu', 6, 3, 'Female', NULL),
+('2023-0004', 'Daniel', 'Chen', 6, 2, 'Male', NULL),
+('2024-0003', 'Andrea', 'Wang', 6, 1, 'Female', NULL),
+('2021-0007', 'Benjamin', 'Zhang', 7, 4, 'Male', NULL),
+('2022-0007', 'Natalie', 'Liu', 7, 3, 'Female', NULL),
+('2023-0005', 'Samuel', 'Zhao', 7, 2, 'Male', NULL),
+('2021-0008', 'Victor', 'Qian', 8, 4, 'Male', NULL),
+('2022-0008', 'Olivia', 'Sun', 8, 3, 'Female', NULL),
+('2021-0009', 'Eric', 'Li', 9, 4, 'Male', NULL),
+('2022-0009', 'Grace', 'Wu', 9, 3, 'Female', NULL),
+('2021-0010', 'Andrew', 'Huang', 13, 4, 'Male', NULL),
+('2022-0010', 'Hannah', 'Lin', 13, 3, 'Female', NULL),
+('2023-0006', 'Jason', 'Zhou', 13, 2, 'Male', NULL),
+('2024-0004', 'Emily', 'Xu', 13, 1, 'Female', NULL),
+('2021-0011', 'Jonathan', 'Ma', 16, 4, 'Male', NULL),
+('2022-0011', 'Jessica', 'Zhu', 16, 3, 'Female', NULL),
+('2023-0007', 'Kevin', 'Guo', 16, 2, 'Male', NULL),
+('2021-0012', 'Alexander', 'Cai', 17, 4, 'Male', NULL),
+('2022-0012', 'Victoria', 'Deng', 17, 3, 'Female', NULL),
+('2020-0004', 'Christopher', 'Hu', 19, 5, 'Male', NULL),
+('2021-0013', 'Samantha', 'Xie', 19, 4, 'Female', NULL),
+('2022-0013', 'Ryan', 'Liang', 19, 3, 'Male', NULL),
+('2023-0008', 'Megan', 'Fang', 19, 2, 'Female', NULL),
+('2024-0005', 'Justin', 'Mao', 19, 1, 'Male', NULL),
+('2021-0014', 'Nicholas', 'Kang', 20, 4, 'Male', NULL),
+('2022-0014', 'Lauren', 'Shen', 20, 3, 'Female', NULL),
+('2023-0009', 'Aaron', 'Bai', 20, 2, 'Male', NULL),
+('2020-0005', 'Patrick', 'Jin', 22, 5, 'Male', NULL),
+('2021-0015', 'Brittany', 'Luo', 22, 4, 'Female', NULL),
+('2022-0015', 'Derek', 'Yuan', 22, 3, 'Male', NULL),
+('2023-0010', 'Tiffany', 'Tang', 22, 2, 'Female', NULL),
+('2024-0006', 'Brian', 'Jiang', 22, 1, 'Male', NULL),
+('2021-0016', 'Sean', 'Du', 24, 4, 'Male', NULL),
+('2022-0016', 'Rachel', 'Xia', 24, 3, 'Female', NULL),
+('2020-0006', 'Matthew', 'Wei', 25, 5, 'Male', NULL),
+('2021-0017', 'Christina', 'Yin', 25, 4, 'Female', NULL),
+('2022-0017', 'Jordan', 'Han', 25, 3, 'Male', NULL),
+('2020-0007', 'Brandon', 'Cheng', 26, 5, 'Male', NULL),
+('2021-0018', 'Amanda', 'Peng', 26, 4, 'Female', NULL),
+('2022-0018', 'Tyler', 'Ruan', 26, 3, 'Male', NULL),
+('2021-0019', 'Zachary', 'Sheng', 27, 4, 'Male', NULL),
+('2022-0019', 'Vanessa', 'Fu', 27, 3, 'Female', NULL),
+('2021-0020', 'Cody', 'Gao', 28, 4, 'Male', NULL),
+('2022-0020', 'Jasmine', 'Qi', 28, 3, 'Female', NULL),
+('2021-0021', 'Austin', 'Kong', 30, 4, 'Male', NULL),
+('2022-0021', 'Stephanie', 'Cao', 30, 3, 'Female', NULL),
+('2020-0008', 'Adam', 'Liao', 32, 5, 'Male', NULL),
+('2021-0022', 'Nicole', 'Shi', 32, 4, 'Female', NULL),
+('2022-0022', 'Logan', 'Yan', 32, 3, 'Male', NULL),
+('2020-0009', 'Ethan', 'Dong', 33, 5, 'Male', NULL),
+('2021-0023', 'Katherine', 'Zeng', 33, 4, 'Female', NULL),
+('2021-0024', 'Nathan', 'Hao', 34, 4, 'Male', NULL),
+('2022-0023', 'Lily', 'Ye', 34, 3, 'Female', NULL),
+('2021-0025', 'Caleb', 'Ge', 35, 4, 'Male', NULL),
+('2022-0024', 'Monica', 'Zhuang', 35, 3, 'Female', NULL),
+('2021-0026', 'Christian', 'Su', 36, 4, 'Male', NULL),
+('2022-0025', 'Paige', 'Shao', 36, 3, 'Female', NULL),
+('2023-0011', 'Marcus', 'Hua', 36, 2, 'Male', NULL),
+('2024-0007', 'Hailey', 'Chai', 36, 1, 'Female', NULL),
+('2020-0010', 'Dylan', 'Geng', 37, 5, 'Male', NULL),
+('2021-0027', 'Allison', 'Xiong', 37, 4, 'Female', NULL),
+('2022-0026', 'Cole', 'Xun', 37, 3, 'Male', NULL),
+('2023-0012', 'Molly', 'Zou', 37, 2, 'Female', NULL),
+('2021-0028', 'Isaiah', 'Wen', 14, 4, 'Male', NULL),
+('2022-0027', 'Kaitlyn', 'Meng', 14, 3, 'Female', NULL),
+('2021-0029', 'Luke', 'Shen', 15, 4, 'Male', NULL),
+('2022-0028', 'Jenna', 'Rong', 15, 3, 'Female', NULL),
+('2021-0030', 'Gavin', 'Zang', 16, 4, 'Male', NULL),
+('2022-0029', 'Morgan', 'Qu', 16, 3, 'Female', NULL),
+('2021-0031', 'Mason', 'Shu', 18, 4, 'Male', NULL),
+('2022-0030', 'Brooke', 'Kuang', 18, 3, 'Female', NULL),
+('2021-0032', 'Wyatt', 'Huang', 21, 4, 'Male', NULL),
+('2022-0031', 'Sydney', 'Cen', 21, 3, 'Female', NULL),
+('2021-0033', 'Evan', 'Cen', 22, 4, 'Male', NULL),
+('2022-0032', 'Taylor', 'Shan', 22, 3, 'Female', NULL),
+('2021-0034', 'Aiden', 'Ning', 23, 4, 'Male', NULL),
+('2022-0033', 'Madison', 'Jia', 23, 3, 'Female', NULL),
+('2021-0035', 'Connor', 'Zhai', 25, 4, 'Male', NULL),
+('2022-0034', 'Alexis', 'Kou', 25, 3, 'Female', NULL),
+('2021-0036', 'Hunter', 'Gou', 27, 4, 'Male', NULL),
+('2022-0035', 'Julia', 'Wei', 27, 3, 'Female', NULL),
+('2021-0037', 'Adrian', 'Chu', 29, 4, 'Male', NULL),
+('2022-0036', 'Kylie', 'Yao', 29, 3, 'Female', NULL),
+('2021-0038', 'Robert', 'Lai', 28, 4, 'Male', NULL),
+('2022-0037', 'Sabrina', 'Bi', 28, 3, 'Female', NULL),
+('2021-0039', 'Leonardo', 'Dai', 29, 4, 'Male', NULL),
+('2022-0038', 'Isabella', 'Tao', 29, 3, 'Female', NULL),
+('2021-0040', 'Diego', 'Xuan', 37, 4, 'Male', NULL),
+('2022-0039', 'Gabriella', 'Leng', 37, 3, 'Female', NULL);
 
--- Civil Engineering Students
-('2020-0001', 'Antonio', 'Mendoza', 1, 5, 'Male'),
-('2021-0003', 'Elena', 'Ramos', 1, 4, 'Female'),
-('2022-0003', 'Carlos', 'Sy', 1, 3, 'Male'),
-('2023-0003', 'Patricia', 'Chua', 1, 2, 'Female'),
-
--- Electrical Engineering Students
-('2020-0002', 'Ricardo', 'Lim', 3, 5, 'Male'),
-('2021-0004', 'Veronica', 'Tan', 3, 4, 'Female'),
-('2022-0004', 'Fernando', 'Ong', 3, 3, 'Male'),
-
--- Mechanical Engineering Students
-('2020-0003', 'Roberto', 'Wong', 4, 5, 'Male'),
-('2021-0005', 'Sofia', 'Chan', 4, 4, 'Female'),
-('2022-0005', 'Luis', 'Kwan', 4, 3, 'Male'),
-
--- Computer Science Students
-('2021-0006', 'Gabriel', 'Lee', 6, 4, 'Male'),
-('2022-0006', 'Catherine', 'Yu', 6, 3, 'Female'),
-('2023-0004', 'Daniel', 'Chen', 6, 2, 'Male'),
-('2024-0003', 'Andrea', 'Wang', 6, 1, 'Female'),
-
--- Biology Students
-('2021-0007', 'Benjamin', 'Zhang', 7, 4, 'Male'),
-('2022-0007', 'Natalie', 'Liu', 7, 3, 'Female'),
-('2023-0005', 'Samuel', 'Zhao', 7, 2, 'Male'),
-
--- Chemistry Students
-('2021-0008', 'Victor', 'Qian', 8, 4, 'Male'),
-('2022-0008', 'Olivia', 'Sun', 8, 3, 'Female'),
-
--- Mathematics Students
-('2021-0009', 'Eric', 'Li', 9, 4, 'Male'),
-('2022-0009', 'Grace', 'Wu', 9, 3, 'Female'),
-
--- Psychology Students
-('2021-0010', 'Andrew', 'Huang', 12, 4, 'Male'),
-('2022-0010', 'Hannah', 'Lin', 12, 3, 'Female'),
-('2023-0006', 'Jason', 'Zhou', 12, 2, 'Male'),
-('2024-0004', 'Emily', 'Xu', 12, 1, 'Female'),
-
--- Business Administration - Marketing Students
-('2021-0011', 'Jonathan', 'Ma', 16, 4, 'Male'),
-('2022-0011', 'Jessica', 'Zhu', 16, 3, 'Female'),
-('2023-0007', 'Kevin', 'Guo', 16, 2, 'Male'),
-
--- Business Administration - Finance Students
-('2021-0012', 'Alexander', 'Cai', 17, 4, 'Male'),
-('2022-0012', 'Victoria', 'Deng', 17, 3, 'Female'),
-
--- Accountancy Students
-('2020-0004', 'Christopher', 'Hu', 19, 5, 'Male'),
-('2021-0013', 'Samantha', 'Xie', 19, 4, 'Female'),
-('2022-0013', 'Ryan', 'Liang', 19, 3, 'Male'),
-('2023-0008', 'Megan', 'Fang', 19, 2, 'Female'),
-('2024-0005', 'Justin', 'Mao', 19, 1, 'Male'),
-
--- Elementary Education Students
-('2021-0014', 'Nicholas', 'Kang', 20, 4, 'Male'),
-('2022-0014', 'Lauren', 'Shen', 20, 3, 'Female'),
-('2023-0009', 'Aaron', 'Bai', 20, 2, 'Male'),
-
--- Nursing Students
-('2020-0005', 'Patrick', 'Jin', 22, 5, 'Male'),
-('2021-0015', 'Brittany', 'Luo', 22, 4, 'Female'),
-('2022-0015', 'Derek', 'Yuan', 22, 3, 'Male'),
-('2023-0010', 'Tiffany', 'Tang', 22, 2, 'Female'),
-('2024-0006', 'Brian', 'Jiang', 22, 1, 'Male'),
-
--- Medical Technology Students
-('2021-0016', 'Sean', 'Du', 23, 4, 'Male'),
-('2022-0016', 'Rachel', 'Xia', 23, 3, 'Female'),
-
--- Architecture Students
-('2020-0006', 'Matthew', 'Wei', 24, 5, 'Male'),
-('2021-0017', 'Christina', 'Yin', 24, 4, 'Female'),
-('2022-0017', 'Jordan', 'Han', 24, 3, 'Male'),
-
--- Law Students
-('2020-0007', 'Brandon', 'Cheng', 26, 5, 'Male'),
-('2021-0018', 'Amanda', 'Peng', 26, 4, 'Female'),
-('2022-0018', 'Tyler', 'Ruan', 26, 3, 'Male'),
-
--- Forestry Students
-('2021-0019', 'Zachary', 'Sheng', 27, 4, 'Male'),
-('2022-0019', 'Vanessa', 'Fu', 27, 3, 'Female'),
-
--- Political Science Students
-('2021-0020', 'Cody', 'Gao', 28, 4, 'Male'),
-('2022-0020', 'Jasmine', 'Qi', 28, 3, 'Female'),
-
--- Public Health Students
-('2021-0021', 'Austin', 'Kong', 29, 4, 'Male'),
-('2022-0021', 'Stephanie', 'Cao', 29, 3, 'Female'),
-
--- Pharmacy Students
-('2020-0008', 'Adam', 'Liao', 31, 5, 'Male'),
-('2021-0022', 'Nicole', 'Shi', 31, 4, 'Female'),
-('2022-0022', 'Logan', 'Yan', 31, 3, 'Male'),
-
--- Veterinary Medicine Students
-('2020-0009', 'Ethan', 'Dong', 32, 5, 'Male'),
-('2021-0023', 'Katherine', 'Zeng', 32, 4, 'Female'),
-
--- Music Students
-('2021-0024', 'Nathan', 'Hao', 33, 4, 'Male'),
-('2022-0023', 'Lily', 'Ye', 33, 3, 'Female'),
-
--- Visual Arts Students
-('2021-0025', 'Caleb', 'Ge', 35, 4, 'Male'),
-('2022-0024', 'Monica', 'Zhuang', 35, 3, 'Female'),
-
--- Information Technology Students
-('2021-0026', 'Christian', 'Su', 36, 4, 'Male'),
-('2022-0025', 'Paige', 'Shao', 36, 3, 'Female'),
-('2023-0011', 'Marcus', 'Hua', 36, 2, 'Male'),
-('2024-0007', 'Hailey', 'Chai', 36, 1, 'Female'),
-
--- Information Systems Students
-('2020-0010', 'Dylan', 'Geng', 37, 5, 'Male'),
-('2021-0027', 'Allison', 'Xiong', 37, 4, 'Female'),
-('2022-0026', 'Cole', 'Xun', 37, 3, 'Male'),
-('2023-0012', 'Molly', 'Zou', 37, 2, 'Female'),
-
--- Communication Students
-('2021-0028', 'Isaiah', 'Wen', 13, 4, 'Male'),
-('2022-0027', 'Kaitlyn', 'Meng', 13, 3, 'Female'),
-
--- Sociology Students
-('2021-0029', 'Luke', 'Shen', 14, 4, 'Male'),
-('2022-0028', 'Jenna', 'Rong', 14, 3, 'Female'),
-
--- English Students
-('2021-0030', 'Gavin', 'Zang', 15, 4, 'Male'),
-('2022-0029', 'Morgan', 'Qu', 15, 3, 'Female'),
-
--- HRM Students
-('2021-0031', 'Mason', 'Shu', 18, 4, 'Male'),
-('2022-0030', 'Brooke', 'Kuang', 18, 3, 'Female'),
-
--- Entrepreneurship Students
-('2021-0032', 'Wyatt', 'Huang', 20, 4, 'Male'),
-('2022-0031', 'Sydney', 'Cen', 20, 3, 'Female'),
-
--- Secondary Education - English Students
-('2021-0033', 'Evan', 'Cen', 21, 4, 'Male'),
-('2022-0032', 'Taylor', 'Shan', 21, 3, 'Female'),
-
--- Secondary Education - Math Students
-('2021-0034', 'Aiden', 'Ning', 22, 4, 'Male'),
-('2022-0033', 'Madison', 'Jia', 22, 3, 'Female'),
-
--- Secondary Education - Science Students
-('2021-0035', 'Connor', 'Zhai', 23, 4, 'Male'),
-('2022-0034', 'Alexis', 'Kou', 23, 3, 'Female'),
-
--- Midwifery Students
-('2021-0036', 'Hunter', 'Gou', 24, 4, 'Male'),
-('2022-0035', 'Julia', 'Wei', 24, 3, 'Female'),
-
--- Interior Design Students
-('2021-0037', 'Adrian', 'Chu', 25, 4, 'Male'),
-('2022-0036', 'Kylie', 'Yao', 25, 3, 'Female'),
-
--- Environmental Science Students
-('2021-0038', 'Robert', 'Lai', 28, 4, 'Male'),
-('2022-0037', 'Sabrina', 'Bi', 28, 3, 'Female'),
-
--- History Students
-('2021-0039', 'Leonardo', 'Dai', 29, 4, 'Male'),
-('2022-0038', 'Isabella', 'Tao', 29, 3, 'Female'),
-
--- Theater Arts Students
-('2021-0040', 'Diego', 'Xuan', 36, 4, 'Male'),
-('2022-0039', 'Gabriella', 'Leng', 36, 3, 'Female');
+-- Additional 500 students (using IDs from 2024-0008 to 2024-0507)
+INSERT INTO students (id, first_name, last_name, program_id, year_level, gender, photo) VALUES
+('2024-0008', 'Liam', 'Anderson', 46, 1, 'Male', NULL),
+('2024-0009', 'Emma', 'Wilson', 46, 1, 'Female', NULL),
+('2024-0010', 'Noah', 'Thomas', 47, 1, 'Male', NULL),
+('2024-0011', 'Olivia', 'Taylor', 47, 1, 'Female', NULL),
+('2024-0012', 'William', 'Moore', 48, 1, 'Male', NULL),
+('2024-0013', 'Ava', 'Jackson', 48, 1, 'Female', NULL),
+('2024-0014', 'James', 'Martin', 49, 1, 'Male', NULL),
+('2024-0015', 'Isabella', 'Lee', 49, 1, 'Female', NULL),
+('2024-0016', 'Oliver', 'Perez', 50, 1, 'Male', NULL),
+('2024-0017', 'Sophia', 'Thompson', 50, 1, 'Female', NULL),
+('2024-0018', 'Benjamin', 'White', 51, 1, 'Male', NULL),
+('2024-0019', 'Mia', 'Harris', 51, 1, 'Female', NULL),
+('2024-0020', 'Elijah', 'Sanchez', 52, 1, 'Male', NULL),
+('2024-0021', 'Charlotte', 'Clark', 52, 1, 'Female', NULL),
+('2024-0022', 'Lucas', 'Ramirez', 53, 1, 'Male', NULL),
+('2024-0023', 'Amelia', 'Lewis', 53, 1, 'Female', NULL),
+('2024-0024', 'Mason', 'Robinson', 54, 1, 'Male', NULL),
+('2024-0025', 'Harper', 'Walker', 54, 1, 'Female', NULL),
+('2024-0026', 'Logan', 'Young', 55, 1, 'Male', NULL),
+('2024-0027', 'Evelyn', 'Allen', 55, 1, 'Female', NULL),
+('2024-0028', 'Alexander', 'King', 56, 1, 'Male', NULL),
+('2024-0029', 'Abigail', 'Wright', 56, 1, 'Female', NULL),
+('2024-0030', 'Ethan', 'Scott', 57, 1, 'Male', NULL),
+('2024-0031', 'Emily', 'Torres', 57, 1, 'Female', NULL),
+('2024-0032', 'Jacob', 'Nguyen', 58, 1, 'Male', NULL),
+('2024-0033', 'Elizabeth', 'Hill', 58, 1, 'Female', NULL),
+('2024-0034', 'Michael', 'Flores', 59, 1, 'Male', NULL),
+('2024-0035', 'Sofia', 'Green', 59, 1, 'Female', NULL),
+('2024-0036', 'Daniel', 'Adams', 60, 1, 'Male', NULL),
+('2024-0037', 'Avery', 'Nelson', 60, 1, 'Female', NULL),
+('2024-0038', 'Henry', 'Baker', 61, 1, 'Male', NULL),
+('2024-0039', 'Ella', 'Hall', 61, 1, 'Female', NULL),
+('2024-0040', 'Jackson', 'Rivera', 62, 1, 'Male', NULL),
+('2024-0041', 'Scarlett', 'Campbell', 62, 1, 'Female', NULL),
+('2024-0042', 'Sebastian', 'Mitchell', 63, 1, 'Male', NULL),
+('2024-0043', 'Grace', 'Carter', 63, 1, 'Female', NULL),
+('2024-0044', 'Aiden', 'Roberts', 64, 1, 'Male', NULL),
+('2024-0045', 'Chloe', 'Gomez', 64, 1, 'Female', NULL),
+('2024-0046', 'Matthew', 'Phillips', 65, 1, 'Male', NULL),
+('2024-0047', 'Victoria', 'Evans', 65, 1, 'Female', NULL),
+('2024-0048', 'Samuel', 'Turner', 66, 1, 'Male', NULL),
+('2024-0049', 'Riley', 'Diaz', 66, 1, 'Female', NULL),
+('2024-0050', 'David', 'Parker', 67, 1, 'Male', NULL),
+('2024-0051', 'Aria', 'Cruz', 67, 1, 'Female', NULL),
+('2024-0052', 'Joseph', 'Edwards', 68, 1, 'Male', NULL),
+('2024-0053', 'Lily', 'Collins', 68, 1, 'Female', NULL),
+('2024-0054', 'Carter', 'Reyes', 69, 1, 'Male', NULL),
+('2024-0055', 'Zoe', 'Stewart', 69, 1, 'Female', NULL),
+('2024-0056', 'Owen', 'Morris', 70, 1, 'Male', NULL),
+('2024-0057', 'Hannah', 'Morales', 70, 1, 'Female', NULL),
+('2024-0058', 'Wyatt', 'Murphy', 71, 1, 'Male', NULL),
+('2024-0059', 'Addison', 'Cook', 71, 1, 'Female', NULL),
+('2024-0060', 'John', 'Rogers', 72, 1, 'Male', NULL),
+('2024-0061', 'Layla', 'Gutierrez', 72, 1, 'Female', NULL),
+('2024-0062', 'Jack', 'Ortiz', 73, 1, 'Male', NULL),
+('2024-0063', 'Natalie', 'Morgan', 73, 1, 'Female', NULL),
+('2024-0064', 'Luke', 'Cooper', 74, 1, 'Male', NULL),
+('2024-0065', 'Savannah', 'Peterson', 74, 1, 'Female', NULL),
+('2024-0066', 'Jayden', 'Bailey', 75, 1, 'Male', NULL),
+('2024-0067', 'Brooklyn', 'Reed', 75, 1, 'Female', NULL),
+('2024-0068', 'Dylan', 'Kelly', 76, 1, 'Male', NULL),
+('2024-0069', 'Leah', 'Howard', 76, 1, 'Female', NULL),
+('2024-0070', 'Grayson', 'Ramos', 77, 1, 'Male', NULL),
+('2024-0071', 'Zara', 'Kim', 77, 1, 'Female', NULL),
+('2024-0072', 'Levi', 'Cox', 78, 1, 'Male', NULL),
+('2024-0073', 'Penelope', 'Ward', 78, 1, 'Female', NULL),
+('2024-0074', 'Isaiah', 'Richardson', 79, 1, 'Male', NULL),
+('2024-0075', 'Mila', 'Watson', 79, 1, 'Female', NULL),
+('2024-0076', 'Julian', 'Brooks', 80, 1, 'Male', NULL),
+('2024-0077', 'Aurora', 'Chavez', 80, 1, 'Female', NULL),
+('2024-0078', 'Gabriel', 'Wood', 81, 1, 'Male', NULL),
+('2024-0079', 'Violet', 'James', 81, 1, 'Female', NULL),
+('2024-0080', 'Mateo', 'Bennett', 82, 1, 'Male', NULL),
+('2024-0081', 'Stella', 'Gray', 82, 1, 'Female', NULL),
+('2024-0082', 'Anthony', 'Mendoza', 83, 1, 'Male', NULL),
+('2024-0083', 'Bella', 'Ruiz', 83, 1, 'Female', NULL),
+('2024-0084', 'Jaxon', 'Hughes', 84, 1, 'Male', NULL),
+('2024-0085', 'Lucy', 'Price', 84, 1, 'Female', NULL),
+('2024-0086', 'Lincoln', 'Alvarez', 85, 1, 'Male', NULL),
+('2024-0087', 'Ellie', 'Castillo', 85, 1, 'Female', NULL),
+('2024-0088', 'Joshua', 'Sanders', 86, 1, 'Male', NULL),
+('2024-0089', 'Claire', 'Patel', 86, 1, 'Female', NULL),
+('2024-0090', 'Christopher', 'Myers', 87, 1, 'Male', NULL),
+('2024-0091', 'Samantha', 'Long', 87, 1, 'Female', NULL),
+('2024-0092', 'Andrew', 'Ross', 88, 1, 'Male', NULL),
+('2024-0093', 'Anna', 'Foster', 88, 1, 'Female', NULL),
+('2024-0094', 'Theodore', 'Jimenez', 89, 1, 'Male', NULL),
+('2024-0095', 'Caroline', 'Powell', 89, 1, 'Female', NULL),
+('2024-0096', 'Caleb', 'Jenkins', 90, 1, 'Male', NULL),
+('2024-0097', 'Nova', 'Perry', 90, 1, 'Female', NULL),
+('2024-0098', 'Ryan', 'Simmons', 91, 1, 'Male', NULL),
+('2024-0099', 'Genesis', 'Butler', 91, 1, 'Female', NULL),
+('2024-0100', 'Asher', 'Barnes', 92, 1, 'Male', NULL),
+('2024-0101', 'Emilia', 'Fisher', 92, 1, 'Female', NULL),
+('2024-0102', 'Nathan', 'Henderson', 93, 1, 'Male', NULL),
+('2024-0103', 'Kennedy', 'Coleman', 93, 1, 'Female', NULL),
+('2024-0104', 'Thomas', 'Johnston', 94, 1, 'Male', NULL),
+('2024-0105', 'Sarah', 'West', 94, 1, 'Female', NULL),
+('2024-0106', 'Leo', 'Garcia', 95, 1, 'Male', NULL),
+('2024-0107', 'Madelyn', 'Lopez', 95, 1, 'Female', NULL),
+-- Continue with more students...
+('2023-0100', 'Eli', 'Martinez', 46, 2, 'Male', NULL),
+('2023-0101', 'Ariana', 'Davis', 46, 2, 'Female', NULL),
+('2023-0102', 'Charles', 'Miller', 47, 2, 'Male', NULL),
+('2023-0103', 'Allison', 'Brown', 47, 2, 'Female', NULL),
+('2023-0104', 'Hudson', 'Jones', 48, 2, 'Male', NULL),
+('2023-0105', 'Maya', 'Williams', 48, 2, 'Female', NULL),
+('2023-0106', 'Ezra', 'Johnson', 49, 2, 'Male', NULL),
+('2023-0107', 'Elena', 'Garcia', 49, 2, 'Female', NULL),
+('2023-0108', 'Calvin', 'Rodriguez', 50, 2, 'Male', NULL),
+('2023-0109', 'Gabriella', 'Martinez', 50, 2, 'Female', NULL),
+('2023-0110', 'Arthur', 'Hernandez', 51, 2, 'Male', NULL),
+('2023-0111', 'Naomi', 'Lopez', 51, 2, 'Female', NULL),
+('2023-0112', 'Elliot', 'Gonzalez', 52, 2, 'Male', NULL),
+('2023-0113', 'Alice', 'Wilson', 52, 2, 'Female', NULL),
+('2023-0114', 'Finn', 'Anderson', 53, 2, 'Male', NULL),
+('2023-0115', 'Hailey', 'Thomas', 53, 2, 'Female', NULL),
+('2023-0116', 'Miles', 'Taylor', 54, 2, 'Male', NULL),
+('2023-0117', 'Ivy', 'Moore', 54, 2, 'Female', NULL),
+('2023-0118', 'Rowan', 'Jackson', 55, 2, 'Male', NULL),
+('2023-0119', 'Lydia', 'Martin', 55, 2, 'Female', NULL),
+('2023-0120', 'Silas', 'Lee', 56, 2, 'Male', NULL),
+('2023-0121', 'Eva', 'Perez', 56, 2, 'Female', NULL),
+('2023-0122', 'Micah', 'Thompson', 57, 2, 'Male', NULL),
+('2023-0123', 'Mackenzie', 'White', 57, 2, 'Female', NULL),
+('2023-0124', 'Amir', 'Harris', 58, 2, 'Male', NULL),
+('2023-0125', 'Gianna', 'Sanchez', 58, 2, 'Female', NULL),
+('2023-0126', 'Kingston', 'Clark', 59, 2, 'Male', NULL),
+('2023-0127', 'Isabelle', 'Ramirez', 59, 2, 'Female', NULL),
+('2023-0128', 'Theo', 'Lewis', 60, 2, 'Male', NULL),
+('2023-0129', 'Julia', 'Robinson', 60, 2, 'Female', NULL),
+('2023-0130', 'Jeremiah', 'Walker', 61, 2, 'Male', NULL),
+('2023-0131', 'Katherine', 'Young', 61, 2, 'Female', NULL),
+('2023-0132', 'Xavier', 'Allen', 62, 2, 'Male', NULL),
+('2023-0133', 'Serenity', 'King', 62, 2, 'Female', NULL),
+('2023-0134', 'Max', 'Wright', 63, 2, 'Male', NULL),
+('2023-0135', 'Aubrey', 'Scott', 63, 2, 'Female', NULL),
+('2023-0136', 'Bennett', 'Torres', 64, 2, 'Male', NULL),
+('2023-0137', 'Madeline', 'Nguyen', 64, 2, 'Female', NULL),
+('2023-0138', 'Dean', 'Hill', 65, 2, 'Male', NULL),
+('2023-0139', 'Alexandra', 'Flores', 65, 2, 'Female', NULL),
+('2023-0140', 'Weston', 'Green', 66, 2, 'Male', NULL),
+('2023-0141', 'Nora', 'Adams', 66, 2, 'Female', NULL),
+('2023-0142', 'Beckett', 'Nelson', 67, 2, 'Male', NULL),
+('2023-0143', 'Reagan', 'Baker', 67, 2, 'Female', NULL),
+('2023-0144', 'Kai', 'Hall', 68, 2, 'Male', NULL),
+('2023-0145', 'Taylor', 'Rivera', 68, 2, 'Female', NULL),
+('2023-0146', 'George', 'Campbell', 69, 2, 'Male', NULL),
+('2023-0147', 'Kylie', 'Mitchell', 69, 2, 'Female', NULL),
+('2023-0148', 'Hayden', 'Carter', 70, 2, 'Male', NULL),
+('2023-0149', 'Sydney', 'Roberts', 70, 2, 'Female', NULL),
+('2023-0150', 'Nicolas', 'Gomez', 71, 2, 'Male', NULL),
+('2023-0151', 'Trinity', 'Phillips', 71, 2, 'Female', NULL),
+('2023-0152', 'Brady', 'Evans', 72, 2, 'Male', NULL),
+('2023-0153', 'Faith', 'Turner', 72, 2, 'Female', NULL),
+('2023-0154', 'Sawyer', 'Diaz', 73, 2, 'Male', NULL),
+('2023-0155', 'Lillian', 'Parker', 73, 2, 'Female', NULL),
+('2023-0156', 'Jesse', 'Cruz', 74, 2, 'Male', NULL),
+('2023-0157', 'Molly', 'Edwards', 74, 2, 'Female', NULL),
+('2023-0158', 'Zion', 'Collins', 75, 2, 'Male', NULL),
+('2023-0159', 'Bailey', 'Reyes', 75, 2, 'Female', NULL),
+('2023-0160', 'Emmett', 'Stewart', 76, 2, 'Male', NULL),
+('2023-0161', 'Morgan', 'Morris', 76, 2, 'Female', NULL),
+('2023-0162', 'Malachi', 'Morales', 77, 2, 'Male', NULL),
+('2023-0163', 'Elliana', 'Murphy', 77, 2, 'Female', NULL),
+('2023-0164', 'Antonio', 'Cook', 78, 2, 'Male', NULL),
+('2023-0165', 'Jade', 'Rogers', 78, 2, 'Female', NULL),
+('2023-0166', 'Parker', 'Gutierrez', 79, 2, 'Male', NULL),
+('2023-0167', 'London', 'Ortiz', 79, 2, 'Female', NULL),
+('2023-0168', 'Rhett', 'Morgan', 80, 2, 'Male', NULL),
+('2023-0169', 'Daisy', 'Cooper', 80, 2, 'Female', NULL),
+('2023-0170', 'Colton', 'Peterson', 81, 2, 'Male', NULL),
+('2023-0171', 'Kimberly', 'Bailey', 81, 2, 'Female', NULL),
+('2023-0172', 'Ezekiel', 'Reed', 82, 2, 'Male', NULL),
+('2023-0173', 'Vivian', 'Kelly', 82, 2, 'Female', NULL),
+('2023-0174', 'Knox', 'Howard', 83, 2, 'Male', NULL),
+('2023-0175', 'Delilah', 'Ramos', 83, 2, 'Female', NULL),
+('2023-0176', 'Kaleb', 'Kim', 84, 2, 'Male', NULL),
+('2023-0177', 'Alyssa', 'Cox', 84, 2, 'Female', NULL),
+('2023-0178', 'Paxton', 'Ward', 85, 2, 'Male', NULL),
+('2023-0179', 'Summer', 'Richardson', 85, 2, 'Female', NULL),
+('2023-0180', 'Damian', 'Watson', 86, 2, 'Male', NULL),
+('2023-0181', 'Rylee', 'Brooks', 86, 2, 'Female', NULL),
+('2023-0182', 'Gage', 'Chavez', 87, 2, 'Male', NULL),
+('2023-0183', 'Callie', 'Wood', 87, 2, 'Female', NULL),
+('2023-0184', 'Griffin', 'James', 88, 2, 'Male', NULL),
+('2023-0185', 'Juliana', 'Bennett', 88, 2, 'Female', NULL),
+('2023-0186', 'Bradley', 'Gray', 89, 2, 'Male', NULL),
+('2023-0187', 'Sloane', 'Mendoza', 89, 2, 'Female', NULL),
+('2023-0188', 'Jude', 'Ruiz', 90, 2, 'Male', NULL),
+('2023-0189', 'Anastasia', 'Hughes', 90, 2, 'Female', NULL),
+('2023-0190', 'Markus', 'Price', 91, 2, 'Male', NULL),
+('2023-0191', 'Eliza', 'Alvarez', 91, 2, 'Female', NULL),
+('2023-0192', 'Iker', 'Castillo', 92, 2, 'Male', NULL),
+('2023-0193', 'Liliana', 'Sanders', 92, 2, 'Female', NULL),
+('2023-0194', 'Atlas', 'Patel', 93, 2, 'Male', NULL),
+('2023-0195', 'Amaya', 'Myers', 93, 2, 'Female', NULL),
+('2023-0196', 'Zane', 'Long', 94, 2, 'Male', NULL),
+('2023-0197', 'Kate', 'Ross', 94, 2, 'Female', NULL),
+('2023-0198', 'Enzo', 'Foster', 95, 2, 'Male', NULL),
+('2023-0199', 'Isla', 'Jimenez', 95, 2, 'Female', NULL),
+-- Year 2-5 students for additional programs...
+('2022-0100', 'River', 'Powell', 46, 3, 'Male', NULL),
+('2022-0101', 'Jasmine', 'Jenkins', 46, 3, 'Female', NULL),
+('2022-0102', 'Archer', 'Perry', 47, 3, 'Male', NULL),
+('2022-0103', 'Megan', 'Simmons', 47, 3, 'Female', NULL),
+('2022-0104', 'Spencer', 'Butler', 48, 3, 'Male', NULL),
+('2022-0105', 'Rose', 'Barnes', 48, 3, 'Female', NULL),
+('2022-0106', 'Brantley', 'Fisher', 49, 3, 'Male', NULL),
+('2022-0107', 'Harmony', 'Henderson', 49, 3, 'Female', NULL),
+('2022-0108', 'Legend', 'Coleman', 50, 3, 'Male', NULL),
+('2022-0109', 'Brielle', 'Johnston', 50, 3, 'Female', NULL),
+('2022-0110', 'Lorenzo', 'West', 51, 3, 'Male', NULL),
+('2022-0111', 'Gemma', 'Garcia', 51, 3, 'Female', NULL),
+('2022-0112', 'Bodhi', 'Lopez', 52, 3, 'Male', NULL),
+('2022-0113', 'Catherine', 'Davis', 52, 3, 'Female', NULL),
+('2022-0114', 'Alijah', 'Miller', 53, 3, 'Male', NULL),
+('2022-0115', 'Angelina', 'Brown', 53, 3, 'Female', NULL),
+('2022-0116', 'Dominic', 'Jones', 54, 3, 'Male', NULL),
+('2022-0117', 'Gracie', 'Williams', 54, 3, 'Female', NULL),
+('2022-0118', 'Cash', 'Johnson', 55, 3, 'Male', NULL),
+('2022-0119', 'Mya', 'Garcia', 55, 3, 'Female', NULL),
+('2022-0120', 'Kyrie', 'Rodriguez', 56, 3, 'Male', NULL),
+('2022-0121', 'Rachel', 'Martinez', 56, 3, 'Female', NULL),
+('2022-0122', 'Hendrix', 'Hernandez', 57, 3, 'Male', NULL),
+('2022-0123', 'Kendall', 'Lopez', 57, 3, 'Female', NULL),
+('2022-0124', 'Kyson', 'Gonzalez', 58, 3, 'Male', NULL),
+('2022-0125', 'Lila', 'Wilson', 58, 3, 'Female', NULL),
+('2022-0126', 'Flynn', 'Anderson', 59, 3, 'Male', NULL),
+('2022-0127', 'Adalyn', 'Thomas', 59, 3, 'Female', NULL),
+('2022-0128', 'Derek', 'Taylor', 60, 3, 'Male', NULL),
+('2022-0129', 'Aliyah', 'Moore', 60, 3, 'Female', NULL),
+('2022-0130', 'Jeffrey', 'Jackson', 61, 3, 'Male', NULL),
+('2022-0131', 'Arya', 'Martin', 61, 3, 'Female', NULL),
+('2022-0132', 'Rylan', 'Lee', 62, 3, 'Male', NULL),
+('2022-0133', 'Elise', 'Perez', 62, 3, 'Female', NULL),
+('2022-0134', 'Caden', 'Thompson', 63, 3, 'Male', NULL),
+('2022-0135', 'Reese', 'White', 63, 3, 'Female', NULL),
+('2022-0136', 'Maverick', 'Harris', 64, 3, 'Male', NULL),
+('2022-0137', 'Valentina', 'Sanchez', 64, 3, 'Female', NULL),
+('2022-0138', 'Myles', 'Clark', 65, 3, 'Male', NULL),
+('2022-0139', 'Cora', 'Ramirez', 65, 3, 'Female', NULL),
+('2022-0140', 'Ronan', 'Lewis', 66, 3, 'Male', NULL),
+('2022-0141', 'Emery', 'Robinson', 66, 3, 'Female', NULL),
+('2022-0142', 'Dallas', 'Walker', 67, 3, 'Male', NULL),
+('2022-0143', 'Izabella', 'Young', 67, 3, 'Female', NULL),
+('2022-0144', 'Odin', 'Allen', 68, 3, 'Male', NULL),
+('2022-0145', 'Cecilia', 'King', 68, 3, 'Female', NULL),
+('2022-0146', 'Orion', 'Wright', 69, 3, 'Male', NULL),
+('2022-0147', 'Genevieve', 'Scott', 69, 3, 'Female', NULL),
+('2022-0148', 'Braylen', 'Torres', 70, 3, 'Male', NULL),
+('2022-0149', 'Daphne', 'Nguyen', 70, 3, 'Female', NULL),
+('2022-0150', 'Jax', 'Hill', 71, 3, 'Male', NULL),
+('2022-0151', 'Lucia', 'Flores', 71, 3, 'Female', NULL),
+('2022-0152', 'Rory', 'Green', 72, 3, 'Male', NULL),
+('2022-0153', 'Alaina', 'Adams', 72, 3, 'Female', NULL),
+('2022-0154', 'Marcus', 'Nelson', 73, 3, 'Male', NULL),
+('2022-0155', 'Rowan', 'Baker', 73, 3, 'Female', NULL),
+('2022-0156', 'August', 'Hall', 74, 3, 'Male', NULL),
+('2022-0157', 'Journey', 'Rivera', 74, 3, 'Female', NULL),
+('2022-0158', 'Moises', 'Campbell', 75, 3, 'Male', NULL),
+('2022-0159', 'Laura', 'Mitchell', 75, 3, 'Female', NULL),
+('2022-0160', 'Colby', 'Carter', 76, 3, 'Male', NULL),
+('2022-0161', 'Blakely', 'Roberts', 76, 3, 'Female', NULL),
+('2022-0162', 'Ari', 'Gomez', 77, 3, 'Male', NULL),
+('2022-0163', 'Alessandra', 'Phillips', 77, 3, 'Female', NULL),
+('2022-0164', 'Zayden', 'Evans', 78, 3, 'Male', NULL),
+('2022-0165', 'Phoebe', 'Turner', 78, 3, 'Female', NULL),
+('2022-0166', 'Kyler', 'Diaz', 79, 3, 'Male', NULL),
+('2022-0167', 'Catalina', 'Parker', 79, 3, 'Female', NULL),
+('2022-0168', 'Raphael', 'Cruz', 80, 3, 'Male', NULL),
+('2022-0169', 'Miriam', 'Edwards', 80, 3, 'Female', NULL),
+('2022-0170', 'Justice', 'Collins', 81, 3, 'Male', NULL),
+('2022-0171', 'Stephanie', 'Reyes', 81, 3, 'Female', NULL),
+('2022-0172', 'Corey', 'Stewart', 82, 3, 'Male', NULL),
+('2022-0173', 'Bianca', 'Morris', 82, 3, 'Female', NULL),
+('2022-0174', 'Dante', 'Morales', 83, 3, 'Male', NULL),
+('2022-0175', 'Mckenzie', 'Murphy', 83, 3, 'Female', NULL),
+('2022-0176', 'Raylan', 'Cook', 84, 3, 'Male', NULL),
+('2022-0177', 'Giselle', 'Rogers', 84, 3, 'Female', NULL),
+('2022-0178', 'Karson', 'Gutierrez', 85, 3, 'Male', NULL),
+('2022-0179', 'Carly', 'Ortiz', 85, 3, 'Female', NULL),
+('2022-0180', 'Kasen', 'Morgan', 86, 3, 'Male', NULL),
+('2022-0181', 'Malaysia', 'Cooper', 86, 3, 'Female', NULL),
+('2022-0182', 'Rocco', 'Peterson', 87, 3, 'Male', NULL),
+('2022-0183', 'Adriana', 'Bailey', 87, 3, 'Female', NULL),
+('2022-0184', 'Lennox', 'Reed', 88, 3, 'Male', NULL),
+('2022-0185', 'Gwendolyn', 'Kelly', 88, 3, 'Female', NULL),
+('2022-0186', 'Kash', 'Howard', 89, 3, 'Male', NULL),
+('2022-0187', 'Alexis', 'Ramos', 89, 3, 'Female', NULL),
+('2022-0188', 'Remington', 'Kim', 90, 3, 'Male', NULL),
+('2022-0189', 'Daniella', 'Cox', 90, 3, 'Female', NULL),
+('2022-0190', 'Titan', 'Ward', 91, 3, 'Male', NULL),
+('2022-0191', 'Camille', 'Richardson', 91, 3, 'Female', NULL),
+('2022-0192', 'Royce', 'Watson', 92, 3, 'Male', NULL),
+('2022-0193', 'Makenzie', 'Brooks', 92, 3, 'Female', NULL),
+('2022-0194', 'Lance', 'Chavez', 93, 3, 'Male', NULL),
+('2022-0195', 'Amber', 'Wood', 93, 3, 'Female', NULL),
+('2022-0196', 'Memphis', 'James', 94, 3, 'Male', NULL),
+('2022-0197', 'Maci', 'Bennett', 94, 3, 'Female', NULL),
+('2022-0198', 'Deacon', 'Gray', 95, 3, 'Male', NULL),
+('2022-0199', 'Alana', 'Mendoza', 95, 3, 'Female', NULL),
+-- Senior year students...
+('2021-0100', 'Kairo', 'Ruiz', 46, 4, 'Male', NULL),
+('2021-0101', 'Lana', 'Hughes', 46, 4, 'Female', NULL),
+('2021-0102', 'Valentino', 'Price', 47, 4, 'Male', NULL),
+('2021-0103', 'Mikayla', 'Alvarez', 47, 4, 'Female', NULL),
+('2021-0104', 'Randy', 'Castillo', 48, 4, 'Male', NULL),
+('2021-0105', 'Helen', 'Sanders', 48, 4, 'Female', NULL),
+('2021-0106', 'Luka', 'Patel', 49, 4, 'Male', NULL),
+('2021-0107', 'Crystal', 'Myers', 49, 4, 'Female', NULL),
+('2021-0108', 'Larry', 'Long', 50, 4, 'Male', NULL),
+('2021-0109', 'Paris', 'Ross', 50, 4, 'Female', NULL),
+('2021-0110', 'Alonzo', 'Foster', 51, 4, 'Male', NULL),
+('2021-0111', 'Lorelei', 'Jimenez', 51, 4, 'Female', NULL),
+('2021-0112', 'Kameron', 'Powell', 52, 4, 'Male', NULL),
+('2021-0113', 'Bethany', 'Jenkins', 52, 4, 'Female', NULL),
+('2021-0114', 'Dillon', 'Perry', 53, 4, 'Male', NULL),
+('2021-0115', 'Brianna', 'Simmons', 53, 4, 'Female', NULL),
+('2021-0116', 'Kobe', 'Butler', 54, 4, 'Male', NULL),
+('2021-0117', 'Julianna', 'Barnes', 54, 4, 'Female', NULL),
+('2021-0118', 'Sergio', 'Fisher', 55, 4, 'Male', NULL),
+('2021-0119', 'Skye', 'Henderson', 55, 4, 'Female', NULL),
+('2021-0120', 'Johnny', 'Coleman', 56, 4, 'Male', NULL),
+('2021-0121', 'Cassidy', 'Johnston', 56, 4, 'Female', NULL),
+('2021-0122', 'Tyson', 'West', 57, 4, 'Male', NULL),
+('2021-0123', 'Jocelyn', 'Garcia', 57, 4, 'Female', NULL),
+('2021-0124', 'Andres', 'Lopez', 58, 4, 'Male', NULL),
+('2021-0125', 'Kenzie', 'Davis', 58, 4, 'Female', NULL),
+('2021-0126', 'Jamison', 'Miller', 59, 4, 'Male', NULL),
+('2021-0127', 'Angel', 'Brown', 59, 4, 'Female', NULL),
+('2021-0128', 'Marco', 'Jones', 60, 4, 'Male', NULL),
+('2021-0129', 'Joanna', 'Williams', 60, 4, 'Female', NULL),
+('2021-0130', 'Jared', 'Johnson', 61, 4, 'Male', NULL),
+('2021-0131', 'Maliyah', 'Garcia', 61, 4, 'Female', NULL),
+('2021-0132', 'Colt', 'Rodriguez', 62, 4, 'Male', NULL),
+('2021-0133', 'Holly', 'Martinez', 62, 4, 'Female', NULL),
+('2021-0134', 'Grady', 'Hernandez', 63, 4, 'Male', NULL),
+('2021-0135', 'Ruth', 'Lopez', 63, 4, 'Female', NULL),
+('2021-0136', 'Jaylen', 'Gonzalez', 64, 4, 'Male', NULL),
+('2021-0137', 'Adelynn', 'Wilson', 64, 4, 'Female', NULL),
+('2021-0138', 'Leandro', 'Anderson', 65, 4, 'Male', NULL),
+('2021-0139', 'Annie', 'Thomas', 65, 4, 'Female', NULL),
+('2021-0140', 'Dakota', 'Taylor', 66, 4, 'Male', NULL),
+('2021-0141', 'Davina', 'Moore', 66, 4, 'Female', NULL),
+('2021-0142', 'Tadeo', 'Jackson', 67, 4, 'Male', NULL),
+('2021-0143', 'Laney', 'Martin', 67, 4, 'Female', NULL),
+('2021-0144', 'Robin', 'Lee', 68, 4, 'Male', NULL),
+('2021-0145', 'Esther', 'Perez', 68, 4, 'Female', NULL),
+('2021-0146', 'Uriel', 'Thompson', 69, 4, 'Male', NULL),
+('2021-0147', 'Harlow', 'White', 69, 4, 'Female', NULL),
+('2021-0148', 'Alfred', 'Harris', 70, 4, 'Male', NULL),
+('2021-0149', 'Lilian', 'Sanchez', 70, 4, 'Female', NULL),
+('2021-0150', 'Milan', 'Clark', 71, 4, 'Male', NULL),
+('2021-0151', 'Kaydence', 'Ramirez', 71, 4, 'Female', NULL),
+('2021-0152', 'Rocky', 'Lewis', 72, 4, 'Male', NULL),
+('2021-0153', 'Lilliana', 'Robinson', 72, 4, 'Female', NULL),
+('2021-0154', 'Trent', 'Walker', 73, 4, 'Male', NULL),
+('2021-0155', 'Paulina', 'Young', 73, 4, 'Female', NULL),
+('2021-0156', 'Baylor', 'Allen', 74, 4, 'Male', NULL),
+('2021-0157', 'Jayda', 'King', 74, 4, 'Female', NULL),
+('2021-0158', 'Crew', 'Wright', 75, 4, 'Male', NULL),
+('2021-0159', 'Calliope', 'Scott', 75, 4, 'Female', NULL),
+('2021-0160', 'Rayden', 'Torres', 76, 4, 'Male', NULL),
+('2021-0161', 'Jolene', 'Nguyen', 76, 4, 'Female', NULL),
+('2021-0162', 'Kingsley', 'Hill', 77, 4, 'Male', NULL),
+('2021-0163', 'Michaela', 'Flores', 77, 4, 'Female', NULL),
+('2021-0164', 'Sonny', 'Green', 78, 4, 'Male', NULL),
+('2021-0165', 'Yaretzi', 'Adams', 78, 4, 'Female', NULL),
+('2021-0166', 'Terry', 'Nelson', 79, 4, 'Male', NULL),
+('2021-0167', 'Sariah', 'Baker', 79, 4, 'Female', NULL),
+('2021-0168', 'Zaid', 'Hall', 80, 4, 'Male', NULL),
+('2021-0169', 'Nola', 'Rivera', 80, 4, 'Female', NULL),
+('2021-0170', 'Clyde', 'Campbell', 81, 4, 'Male', NULL),
+('2021-0171', 'Madalyn', 'Mitchell', 81, 4, 'Female', NULL),
+('2021-0172', 'Brodie', 'Carter', 82, 4, 'Male', NULL),
+('2021-0173', 'Elaina', 'Roberts', 82, 4, 'Female', NULL),
+('2021-0174', 'Jaxen', 'Gomez', 83, 4, 'Male', NULL),
+('2021-0175', 'Kira', 'Phillips', 83, 4, 'Female', NULL),
+('2021-0176', 'Jon', 'Evans', 84, 4, 'Male', NULL),
+('2021-0177', 'Miranda', 'Turner', 84, 4, 'Female', NULL),
+('2021-0178', 'Ben', 'Diaz', 85, 4, 'Male', NULL),
+('2021-0179', 'Scarlet', 'Parker', 85, 4, 'Female', NULL),
+('2021-0180', 'Grey', 'Cruz', 86, 4, 'Male', NULL),
+('2021-0181', 'April', 'Edwards', 86, 4, 'Female', NULL),
+('2021-0182', 'Zayn', 'Collins', 87, 4, 'Male', NULL),
+('2021-0183', 'Selena', 'Reyes', 87, 4, 'Female', NULL),
+('2021-0184', 'Harley', 'Stewart', 88, 4, 'Male', NULL),
+('2021-0185', 'Lennon', 'Morris', 88, 4, 'Female', NULL),
+('2021-0186', 'Magnus', 'Morales', 89, 4, 'Male', NULL),
+('2021-0187', 'Brynn', 'Murphy', 89, 4, 'Female', NULL),
+('2021-0188', 'Branson', 'Cook', 90, 4, 'Male', NULL),
+('2021-0189', 'Alejandra', 'Rogers', 90, 4, 'Female', NULL),
+('2021-0190', 'Reid', 'Gutierrez', 91, 4, 'Male', NULL),
+('2021-0191', 'Mabel', 'Ortiz', 91, 4, 'Female', NULL),
+('2021-0192', 'Rey', 'Morgan', 92, 4, 'Male', NULL),
+('2021-0193', 'Mckinley', 'Cooper', 92, 4, 'Female', NULL),
+('2021-0194', 'Alden', 'Peterson', 93, 4, 'Male', NULL),
+('2021-0195', 'Angelica', 'Bailey', 93, 4, 'Female', NULL),
+('2021-0196', 'Channing', 'Reed', 94, 4, 'Male', NULL),
+('2021-0197', 'Aniyah', 'Kelly', 94, 4, 'Female', NULL),
+('2021-0198', 'Franco', 'Howard', 95, 4, 'Male', NULL),
+('2021-0199', 'Athena', 'Ramos', 95, 4, 'Female', NULL);

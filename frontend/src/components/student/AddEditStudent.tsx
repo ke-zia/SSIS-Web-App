@@ -6,7 +6,7 @@ import PortalSelect from "../ui/portal-select";
 import { Student } from "../../types/student";
 import { College } from "../../types/college";
 import { Program } from "../../types/program";
-import { createStudent, updateStudent, getProgramsByCollege } from "../../services/studentsService";
+import { createStudent, updateStudent, getProgramsByCollege, uploadStudentPhoto, deleteStudentPhoto, getPhotoPublicUrl } from "../../services/studentsService";
 import {
   validateStudentCreate,
   isStudentIdDuplicate,
@@ -61,6 +61,12 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
   const [collegePrograms, setCollegePrograms] = useState<Program[]>([]);
   const [selectedCollegeId, setSelectedCollegeId] = useState<number | null>(null);
 
+  // Photo related state
+  const [existingPhotoPath, setExistingPhotoPath] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
+
   // Sort colleges alphabetically by name for the portal dropdown
   const sortedCollegeOptions = useMemo(() => {
     const arr = [...colleges];
@@ -85,6 +91,10 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
           gender: student.gender,
         });
 
+        setExistingPhotoPath(student.photo || null);
+        setPreviewUrl(student.photo ? getPhotoPublicUrl(student.photo) : null);
+        setRemoveExistingPhoto(false);
+
         // If editing and student has program_id, try to find that program's college
         if (student.program_id) {
           const program = allPrograms.find((p) => p.id === student.program_id);
@@ -106,6 +116,10 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
           gender: "",
         });
         setSelectedCollegeId(null);
+        setExistingPhotoPath(null);
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setRemoveExistingPhoto(false);
       }
       setFormErrors({});
       setCollegePrograms([]);
@@ -157,6 +171,29 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     }
   };
 
+  // File selection handler
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setSelectedFile(f);
+    setRemoveExistingPhoto(false);
+    if (f) {
+      setPreviewUrl(URL.createObjectURL(f));
+    } else {
+      setPreviewUrl(existingPhotoPath ? getPhotoPublicUrl(existingPhotoPath) : null);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    // mark to remove existing photo on save
+    if (existingPhotoPath) {
+      setRemoveExistingPhoto(true);
+    } else {
+      setRemoveExistingPhoto(false);
+    }
+  };
+
   // Replace the existing handleSubmit function with this updated version
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,15 +240,45 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
 
       const program_code = selectedProgram ? selectedProgram.code : "";
 
-      const payload = {
+      const payload: any = {
         id: formState.id.trim(),
         first_name: formState.first_name.trim(),
         last_name: formState.last_name.trim(),
         program_id: formState.program_id,
-        program_code, // <-- include this to satisfy the API type
+        program_code,
         year_level: typeof yearLevelValue === "number" ? yearLevelValue : parseInt(formState.year_level as string, 10),
         gender: formState.gender,
       };
+
+      // Handle photo upload / replacement / removal
+      if (selectedFile) {
+        // Upload new photo first
+        const { path } = await uploadStudentPhoto(selectedFile);
+        payload.photo = path;
+
+        // If editing and had an existing photo, remove it AFTER successful upload
+        if (isEdit && existingPhotoPath) {
+          try {
+            await deleteStudentPhoto(existingPhotoPath);
+          } catch (err) {
+            console.warn("Failed to delete old photo (non-fatal):", err);
+          }
+        }
+      } else if (removeExistingPhoto) {
+        // If user requested removal of existing photo
+        if (existingPhotoPath) {
+          try {
+            await deleteStudentPhoto(existingPhotoPath);
+          } catch (err) {
+            console.warn("Failed to delete photo:", err);
+          }
+        }
+        // Indicate to backend to clear the photo column
+        payload.photo = "";
+      } else if (existingPhotoPath && isEdit) {
+        // No change to photo: keep existing path (do nothing)
+        // Do not include photo in payload so backend won't change it
+      }
 
       if (isEdit && student) {
         await updateStudent(student.id, payload);
@@ -297,6 +364,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
             {/* Dialog Content */}
             <div className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
+
                 {/* Student ID */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -441,6 +509,134 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                   {formErrors.gender && <div className="text-sm text-red-500">{formErrors.gender}</div>}
                 </div>
 
+                {/* Photo upload*/}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Profile Photo</label>
+                    <span className="text-xs text-gray-500">Optional</span>
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-colors hover:border-red-300 focus-within:border-red-500 bg-gray-50/50">
+                    <div className="max-w-xs mx-auto space-y-4">
+                      {/* Upload icon - only show when no file is selected */}
+                      {!selectedFile && !previewUrl && (
+                        <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                          <svg 
+                            className="w-8 h-8 text-red-500" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.5} 
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" 
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      
+                      {/* Upload text */}
+                      <div className="space-y-1">
+                        <p className="font-medium text-gray-900">
+                          {selectedFile ? "File Selected" : "Upload Your Photo"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {selectedFile 
+                            ? `` 
+                            : "Choose a file to upload as your profile photo."}
+                        </p>
+                      </div>
+                      
+                      {/* Browse button and preview */}
+                      <div className="space-y-3">
+                        <label className="inline-block">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id="student-photo-input"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const el = document.getElementById("student-photo-input") as HTMLInputElement | null;
+                              el?.click();
+                            }}
+                            className="h-9 px-4 text-sm"
+                          >
+                            {selectedFile || previewUrl ? "Change Photo" : "Browse File"}
+                          </Button>
+                        </label>
+                        
+                      {/* Format info */}
+                      <p className="text-xs text-gray-500">
+                        Accepts any image format, up to 5 MB.
+                      </p>
+
+                        {/* Preview area */}
+                        {(selectedFile || previewUrl) && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="space-y-3">
+                              {/* Image */}
+                              <div className="mx-auto h-32 w-32 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                                {previewUrl ? (
+                                  <img 
+                                    src={previewUrl} 
+                                    alt="Preview" 
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                    <svg className="h-12 w-12" viewBox="0 0 24 24" fill="none">
+                                      <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* File info with remove button */}
+                              <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {selectedFile 
+                                      ? selectedFile.name 
+                                      : existingPhotoPath 
+                                        ? "Current Photo" 
+                                        : "Preview"}
+                                  </p>
+                                  {selectedFile && (
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      {(selectedFile.size / 1024).toFixed(0)} KB • {selectedFile.type.split('/')[1]?.toUpperCase() || 'Image'}
+                                    </p>
+                                  )}
+                                  {existingPhotoPath && !selectedFile && (
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleRemovePhoto}
+                                  className="text-gray-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0 ml-2"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* General error */}
                 {formErrors.general && (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -455,11 +651,47 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                  <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting} className="h-10 px-6 font-medium text-gray-700 hover:bg-gray-50 border-gray-300">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleCancel} 
+                    disabled={isSubmitting} 
+                    className="h-10 px-6 font-medium text-gray-700 hover:bg-gray-50 border-gray-300"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting} className="h-10 px-6 font-medium bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-sm hover:shadow">
-                    {isSubmitting ? "Saving..." : (student ? "Update Student" : "Add Student")}
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="h-10 px-6 font-medium bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-sm hover:shadow flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg 
+                          className="animate-spin h-4 w-4 text-white" 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          fill="none" 
+                          viewBox="0 0 24 24"
+                        >
+                          <circle 
+                            className="opacity-25" 
+                            cx="12" 
+                            cy="12" 
+                            r="10" 
+                            stroke="currentColor" 
+                            strokeWidth="4"
+                          />
+                          <path 
+                            className="opacity-75" 
+                            fill="currentColor" 
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      student ? "Update Student" : "Add Student"
+                    )}
                   </Button>
                 </div>
               </form>

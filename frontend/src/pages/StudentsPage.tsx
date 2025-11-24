@@ -1,4 +1,4 @@
-// (updated) fetchPrograms and program cell mapping
+// (updated) fetchPrograms and program cell mapping; added Photo column
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ColumnDef,
@@ -46,7 +46,8 @@ import {
   ChevronsUpDown
 } from "lucide-react";
 import { debounce } from "../utils/helpers";
-import { getAllPrograms } from "../services/programService";
+import { getAllPrograms, } from "../services/programService";
+import { getPhotoPublicUrl } from "../services/studentsService";
 
 const StudentsPage: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -105,7 +106,14 @@ const StudentsPage: React.FC = () => {
         searchQuery || undefined,
         searchBy
       );
-      setStudents(response.students);
+
+      // Map students to populate photo_url if photo path is present
+      const studentsWithPhotos = response.students.map((s) => ({
+        ...s,
+        photo_url: s.photo ? getPhotoPublicUrl(s.photo) : undefined,
+      }));
+
+      setStudents(studentsWithPhotos);
       setPagination(response.pagination);
       
       // Update current page to match backend response
@@ -221,6 +229,21 @@ const StudentsPage: React.FC = () => {
   };
 
   const columns = useMemo<ColumnDef<Student>[]>(() => [
+      {
+        id: "photo",
+        header: "Photo",
+        cell: ({ row }) => {
+          const s = row.original as Student;
+          const url = s.photo_url || "/user.png"; // Use default avatar if no photo_url
+          return (
+            <div className="flex items-center">
+              <img src={url} alt={`${s.first_name} ${s.last_name}`} className="h-10 w-10 rounded-full object-cover border" />
+            </div>
+          );
+        },
+        size: 60,
+        enableSorting: false,
+      },
       {
         accessorKey: "id",
         header: () => (
