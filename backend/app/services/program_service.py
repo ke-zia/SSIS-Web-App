@@ -1,17 +1,16 @@
+"""Program service using raw SQL"""
 from http import HTTPStatus
 from typing import Dict, Optional
 
-from sqlalchemy import or_
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from .. import db
-from ..models.program import Program
-from ..models.college import College
 from ..utils.validators import validate_program_code_unique
 
 
 class ProgramService:
-    """Service for managing program operations."""
+    """Service for managing program operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -22,94 +21,83 @@ class ProgramService:
         search: str = "",
         search_by: str = "all"
     ) -> Dict:
-        """
-        Retrieve programs with pagination, optional sorting and search filtering.
-
-        Args:
-            page: Page number (1-indexed)
-            per_page: Number of items per page
-            sort_by: Column to sort by ('code' or 'name'). Empty string means no sorting.
-            order: Sort order ('asc' or 'desc'). Defaults to 'asc'.
-            search: Search query string. Empty string means no filtering.
-            search_by: Column to search in ('all', 'code', 'name', or 'college'). Defaults to 'all'.
-
-        Returns:
-            Dict with paginated data, total count, and pagination metadata
-        """
         try:
-            from sqlalchemy import or_
-            
-            query = Program.query.outerjoin(College)  # Outer join to handle null college_id
-            
-            # Apply search filtering if search query is provided
-            if search:
-                search_lower = f"%{search.lower()}%"
-                if search_by == "all":
-                    # Search in code, name, and college name AND college code
-                    query = query.filter(
-                        or_(
-                            Program.code.ilike(search_lower),
-                            Program.name.ilike(search_lower),
-                            College.code.ilike(search_lower)
-                        )
-                    )
-                elif search_by == "code":
-                    # Search only in program code
-                    query = query.filter(Program.code.ilike(search_lower))
-                elif search_by == "name":
-                    # Search only in program name
-                    query = query.filter(Program.name.ilike(search_lower))
-                elif search_by == "college":
-                    # Search in both college name AND college code
-                    query = query.filter(College.code.ilike(search_lower))
-            
-            # Get total count before pagination
-            total = query.count()
-            
-            # Apply sorting ONLY if sort_by is provided and valid
-            if sort_by:
-                if sort_by == "code":
-                    if order == "desc":
-                        query = query.order_by(Program.code.desc())
-                    else:
-                        query = query.order_by(Program.code.asc())
-                elif sort_by == "name":
-                    if order == "desc":
-                        query = query.order_by(Program.name.desc())
-                    else:
-                        query = query.order_by(Program.name.asc())
-                elif sort_by == "college":
-                    # Sort by college name using outer join
-                    if order == "desc":
-                        # NULL values will sort last when descending
-                        query = query.order_by(db.func.coalesce(College.code, "").desc())
-                    else:
-                        # NULL values will sort first when ascending
-                        query = query.order_by(db.func.coalesce(College.code, "").asc())
+            where_clauses = []
+            params = {}
 
-            # Apply pagination
+            if search:
+                params["search"] = f"%{search}%"
+                if search_by == "all":
+                    where_clauses.append("(p.code ILIKE :search OR p.name ILIKE :search OR c.code ILIKE :search)")
+                elif search_by == "code":
+                    where_clauses.append("p.code ILIKE :search")
+                elif search_by == "name":
+                    where_clauses.append("p.name ILIKE :search")
+                elif search_by == "college":
+                    where_clauses.append("(c.code ILIKE :search)")
+
+            where_sql = ""
+            if where_clauses:
+                where_sql = "WHERE " + " AND ".join(where_clauses)
+
+            count_sql = text(f"SELECT COUNT(*) AS total FROM programs p LEFT JOIN colleges c ON p.college_id = c.id {where_sql}")
+            total = db.session.execute(count_sql, params).scalar() or 0
+
+            order_clause = ""
+            if sort_by in ("code", "name", "college"):
+                if sort_by == "code":
+                    col = "p.code"
+                elif sort_by == "name":
+                    col = "p.name"
+                else:  # college -> sort by college code to match previous behavior
+                    col = "COALESCE(c.code, '')"
+                direction = "DESC" if order == "desc" else "ASC"
+                order_clause = f"ORDER BY {col} {direction}"
+
             offset = (page - 1) * per_page
-            programs = query.offset(offset).limit(per_page).all()
-            
-            # Calculate pagination metadata
+            params.update({"limit": per_page, "offset": offset})
+
+            data_sql = text(
+                f"""
+                SELECT p.id, p.college_id, p.code, p.name,
+                       c.name AS college_name, c.code AS college_code
+                FROM programs p
+                LEFT JOIN colleges c ON p.college_id = c.id
+                {where_sql}
+                {order_clause}
+                LIMIT :limit OFFSET :offset
+                """
+            )
+
+            rows = db.session.execute(data_sql, params).mappings().all()
+            programs = []
+            for r in rows:
+                programs.append({
+                    "id": r["id"],
+                    "college_id": r["college_id"],
+                    "college_name": r["college_name"] if r["college_name"] is not None else "Not Applicable",
+                    "code": r["code"],
+                    "name": r["name"],
+                })
+
             total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
             has_next = page < total_pages
             has_prev = page > 1
-            
+
             return {
-                "data": [program.to_dict() for program in programs],
+                "data": programs,
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
                     "total": total,
                     "total_pages": total_pages,
                     "has_next": has_next,
-                    "has_prev": has_prev
+                    "has_prev": has_prev,
                 },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
-        except Exception as e:
+        except Exception:
             return {
                 "data": None,
                 "pagination": None,
@@ -118,221 +106,137 @@ class ProgramService:
             }
 
     @staticmethod
-    def get_by_id(program_id: int) -> Optional[Program]:
-        """
-        Retrieve a program by ID.
-
-        Args:
-            program_id: The ID of the program
-
-        Returns:
-            Program object or None if not found
-        """
-        return Program.query.get(program_id)
+    def get_by_id(program_id: int) -> Optional[Dict]:
+        sql = text("SELECT id, college_id, code, name FROM programs WHERE id = :id")
+        row = db.session.execute(sql, {"id": program_id}).mappings().first()
+        if not row:
+            return None
+        return {"id": row["id"], "college_id": row["college_id"], "code": row["code"], "name": row["name"]}
 
     @staticmethod
-    def get_by_code(code: str) -> Optional[Program]:
-        """
-        Retrieve a program by code (case-insensitive).
-
-        Args:
-            code: The program code
-
-        Returns:
-            Program object or None if not found
-        """
-        return Program.query.filter(Program.code.ilike(code.strip())).first()
+    def get_by_code(code: str) -> Optional[Dict]:
+        sql = text("SELECT id, college_id, code, name FROM programs WHERE code ILIKE :code LIMIT 1")
+        row = db.session.execute(sql, {"code": code.strip()}).mappings().first()
+        if not row:
+            return None
+        return {"id": row["id"], "college_id": row["college_id"], "code": row["code"], "name": row["name"]}
 
     @staticmethod
     def create_from_request(data: Dict) -> Dict:
-        """
-        Create a new program from request data.
-
-        Args:
-            data: Request JSON data containing 'college_id', 'code', and 'name'
-
-        Returns:
-            Dict with 'data' (program dict), 'error', and 'status'
-        """
         college_id = data.get("college_id")
         code = (data.get("code") or "").strip()
         name = (data.get("name") or "").strip()
 
-        # Validate college_id - must be a valid integer
         try:
             if college_id is None or college_id == "":
-                return {
-                    "data": None,
-                    "error": "College selection is required.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
+                return {"data": None, "error": "College selection is required.", "status": HTTPStatus.BAD_REQUEST}
             college_id = int(college_id)
         except (ValueError, TypeError):
-            return {
-                "data": None,
-                "error": "College selection is required.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
-        
+            return {"data": None, "error": "College selection is required.", "status": HTTPStatus.BAD_REQUEST}
+
         if not code or not name:
-            return {
-                "data": None,
-                "error": "Both 'code' and 'name' are required.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
+            return {"data": None, "error": "Both 'code' and 'name' are required.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Validate that college exists
-        college = College.query.get(college_id)
-        if not college:
-            return {
-                "data": None,
-                "error": "College not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
+        # Validate college exists
+        found = db.session.execute(text("SELECT id FROM colleges WHERE id = :id"), {"id": college_id}).scalar()
+        if not found:
+            return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
 
-        # Validate unique code
         is_valid, error_msg = validate_program_code_unique(code)
         if not is_valid:
-            status = (
-                HTTPStatus.CONFLICT
-                if "already exists" in error_msg.lower()
-                else HTTPStatus.BAD_REQUEST
-            )
-            return {
-                "data": None,
-                "error": error_msg,
-                "status": status,
-            }
-
-        program = Program(college_id=college_id, code=code, name=name)
+            status = HTTPStatus.CONFLICT if "already exists" in error_msg.lower() else HTTPStatus.BAD_REQUEST
+            return {"data": None, "error": error_msg, "status": status}
 
         try:
-            db.session.add(program)
+            insert_sql = text(
+                "INSERT INTO programs (college_id, code, name) VALUES (:college_id, :code, :name) RETURNING id, college_id, code, name"
+            )
+            result = db.session.execute(insert_sql, {"college_id": college_id, "code": code, "name": name})
+            row = result.mappings().first()
             db.session.commit()
-            return {
-                "data": program.to_dict(),
-                "error": None,
-                "status": HTTPStatus.CREATED,
-            }
+            return {"data": {"id": row["id"], "college_id": row["college_id"], "code": row["code"], "name": row["name"]}, "error": None, "status": HTTPStatus.CREATED}
         except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "A program with this code already exists.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "A program with this code already exists.", "status": HTTPStatus.CONFLICT}
+        except Exception:
+            db.session.rollback()
+            return {"data": None, "error": "Failed to create program.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def update_from_request(program_id: int, data: Dict) -> Dict:
-        """
-        Update an existing program from request data.
-
-        Args:
-            program_id: The ID of the program to update
-            data: Request JSON data containing 'college_id', 'code', and/or 'name'
-
-        Returns:
-            Dict with 'data' (program dict), 'error', and 'status'
-        """
-        program = ProgramService.get_by_id(program_id)
-        if not program:
-            return {
-                "data": None,
-                "error": "Program not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
+        existing = ProgramService.get_by_id(program_id)
+        if not existing:
+            return {"data": None, "error": "Program not found.", "status": HTTPStatus.NOT_FOUND}
 
         college_id = data.get("college_id")
-        code = data.get("code", "").strip() if data.get("code") else None
-        name = data.get("name", "").strip() if data.get("name") else None
+        code = data.get("code", None)
+        name = data.get("name", None)
 
-        # Update college_id if provided
+        params = {"id": program_id}
+        set_clauses = []
+
         if college_id is not None:
-            college = College.query.get(college_id)
-            if not college:
-                return {
-                    "data": None,
-                    "error": "College not found.",
-                    "status": HTTPStatus.NOT_FOUND,
-                }
-            program.college_id = college_id
+            # allow clearing by sending empty string
+            if college_id == "":
+                set_clauses.append("college_id = NULL")
+            else:
+                try:
+                    college_id = int(college_id)
+                except (ValueError, TypeError):
+                    return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
+                found = db.session.execute(text("SELECT id FROM colleges WHERE id = :id"), {"id": college_id}).scalar()
+                if not found:
+                    return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
+                set_clauses.append("college_id = :college_id")
+                params["college_id"] = college_id
 
         if code is not None:
+            code = code.strip()
             if not code:
-                return {
-                    "data": None,
-                    "error": "Program code cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-
-            # Validate unique code (excluding current program)
+                return {"data": None, "error": "Program code cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
             is_valid, error_msg = validate_program_code_unique(code, exclude_id=program_id)
             if not is_valid:
-                status = (
-                    HTTPStatus.CONFLICT
-                    if "already exists" in error_msg.lower()
-                    else HTTPStatus.BAD_REQUEST
-                )
-                return {
-                    "data": None,
-                    "error": error_msg,
-                    "status": status,
-                }
-
-            program.code = code
+                status = HTTPStatus.CONFLICT if "already exists" in error_msg.lower() else HTTPStatus.BAD_REQUEST
+                return {"data": None, "error": error_msg, "status": status}
+            set_clauses.append("code = :code")
+            params["code"] = code
 
         if name is not None:
+            name = name.strip()
             if not name:
-                return {
-                    "data": None,
-                    "error": "Program name cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            program.name = name
+                return {"data": None, "error": "Program name cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
+            set_clauses.append("name = :name")
+            params["name"] = name
 
+        if not set_clauses:
+            return {"data": existing, "error": None, "status": HTTPStatus.OK}
+
+        update_sql = text(f"UPDATE programs SET {', '.join(set_clauses)} WHERE id = :id RETURNING id, college_id, code, name")
         try:
+            result = db.session.execute(update_sql, params)
+            row = result.mappings().first()
+            if not row:
+                db.session.rollback()
+                return {"data": None, "error": "Program not found.", "status": HTTPStatus.NOT_FOUND}
             db.session.commit()
-            return {
-                "data": program.to_dict(),
-                "error": None,
-                "status": HTTPStatus.OK,
-            }
+            return {"data": {"id": row["id"], "college_id": row["college_id"], "code": row["code"], "name": row["name"]}, "error": None, "status": HTTPStatus.OK}
         except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "A program with this code already exists.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "A program with this code already exists.", "status": HTTPStatus.CONFLICT}
+        except Exception:
+            db.session.rollback()
+            return {"data": None, "error": "Failed to update program.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def delete_by_id(program_id: int) -> Dict:
-        """
-        Delete a program by ID.
-
-        Args:
-            program_id: The ID of the program to delete
-
-        Returns:
-            Dict with 'error' and 'status'
-        """
-        program = ProgramService.get_by_id(program_id)
-        if not program:
-            return {
-                "error": "Program not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
+        existing = ProgramService.get_by_id(program_id)
+        if not existing:
+            return {"error": "Program not found.", "status": HTTPStatus.NOT_FOUND}
 
         try:
-            db.session.delete(program)
+            db.session.execute(text("DELETE FROM programs WHERE id = :id"), {"id": program_id})
             db.session.commit()
-            return {
-                "error": None,
-                "status": HTTPStatus.NO_CONTENT,
-            }
-        except Exception as e:
+            return {"error": None, "status": HTTPStatus.NO_CONTENT}
+        except Exception:
             db.session.rollback()
-            return {
-                "error": "Failed to delete program.",
-                "status": HTTPStatus.INTERNAL_SERVER_ERROR,
-            }
+            return {"error": "Failed to delete program.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}

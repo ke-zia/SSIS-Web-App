@@ -12,6 +12,7 @@ import {
   isStudentIdDuplicate,
 } from "../../schemas/students";
 import { X } from "lucide-react";
+import RemoveStudentPhoto from "./RemoveStudentPhoto"; // Import the component
 
 interface AddEditStudentProps {
   open: boolean;
@@ -66,6 +67,10 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
+  
+  // Remove photo dialog state
+  const [removePhotoOpen, setRemovePhotoOpen] = useState(false);
+  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
 
   // Sort colleges alphabetically by name for the portal dropdown
   const sortedCollegeOptions = useMemo(() => {
@@ -123,30 +128,33 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
       }
       setFormErrors({});
       setCollegePrograms([]);
+      setRemovePhotoOpen(false); // Reset photo removal dialog
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, student, allPrograms]);
 
-  // Load programs when selectedCollegeId changes
+  // Update the useEffect that loads college programs:
   useEffect(() => {
     const loadCollegePrograms = async () => {
       if (selectedCollegeId) {
         try {
           const programs = await getProgramsByCollege(selectedCollegeId);
           setCollegePrograms(programs);
-
-          // If editing and program exists in selected college, keep it,
-          // otherwise clear program_id
-          if (student?.program_id) {
+          
+          // After loading programs, if editing a student with program_id,
+          // ensure it's still selected if it exists in the loaded programs
+          if (student && student.program_id) {
             const programExists = programs.some((p) => p.id === student.program_id);
-            if (!programExists) {
-              setFormState((prev) => ({ ...prev, program_id: null }));
+            if (programExists) {
+              // Program exists in this college - keep it selected
+              // Only update if formState doesn't already have it
+              if (formState.program_id !== student.program_id) {
+                setFormState((prev) => ({ ...prev, program_id: student.program_id }));
+              }
             } else {
-              setFormState((prev) => ({ ...prev, program_id: student.program_id }));
+              // Program doesn't exist in this college - clear it
+              setFormState((prev) => ({ ...prev, program_id: null }));
             }
-          } else {
-            // If not editing, don't preselect program
-            setFormState((prev) => ({ ...prev, program_id: null }));
           }
         } catch (error) {
           console.error("Failed to load programs:", error);
@@ -154,15 +162,23 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
         }
       } else {
         setCollegePrograms([]);
-        if (!student?.program_id) {
-          setFormState((prev) => ({ ...prev, program_id: null }));
-        }
       }
     };
 
     loadCollegePrograms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCollegeId]);
+  }, [selectedCollegeId, student]); // Add student to dependencies
+
+  // Add a new useEffect to handle the edge case when college is already selected
+  // but programs haven't loaded yet
+  useEffect(() => {
+    if (open && student && selectedCollegeId && collegePrograms.length > 0) {
+      // When college programs are loaded, check if student's program should be selected
+      const programExists = collegePrograms.some((p) => p.id === student.program_id);
+      if (programExists && formState.program_id !== student.program_id) {
+        setFormState((prev) => ({ ...prev, program_id: student.program_id }));
+      }
+    }
+  }, [open, student, selectedCollegeId, collegePrograms, formState.program_id]);
 
   // Handle backdrop click — close when user clicks the overlay (not the content)
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -183,7 +199,19 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     }
   };
 
-  const handleRemovePhoto = () => {
+  // Handle remove photo button click - show confirmation dialog
+  const handleRemovePhotoClick = () => {
+    // If there's an existing photo, show confirmation dialog
+    if (existingPhotoPath && !selectedFile) {
+      setRemovePhotoOpen(true);
+    } else {
+      // If no existing photo or a new file is selected, just clear
+      handleRemovePhotoConfirmed();
+    }
+  };
+
+  // Actually remove the photo (called after confirmation)
+  const handleRemovePhotoConfirmed = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     // mark to remove existing photo on save
@@ -191,6 +219,26 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
       setRemoveExistingPhoto(true);
     } else {
       setRemoveExistingPhoto(false);
+    }
+    setRemovePhotoOpen(false);
+  };
+
+  // Handle photo removal confirmation from dialog
+  const handleRemovePhotoConfirm = async () => {
+    setIsRemovingPhoto(true);
+    try {
+      // If we're in edit mode and have an existing photo, remove it immediately
+      if (student && existingPhotoPath) {
+        try {
+          await deleteStudentPhoto(existingPhotoPath);
+        } catch (err) {
+          console.warn("Failed to delete photo:", err);
+        }
+        setExistingPhotoPath(null);
+      }
+      handleRemovePhotoConfirmed();
+    } finally {
+      setIsRemovingPhoto(false);
     }
   };
 
@@ -326,6 +374,14 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
         }
       `}</style>
 
+      {/* Remove Student Photo Dialog */}
+      <RemoveStudentPhoto
+        open={removePhotoOpen}
+        onOpenChange={setRemovePhotoOpen}
+        onConfirm={handleRemovePhotoConfirm}
+        isRemoving={isRemovingPhoto}
+      />
+
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
@@ -356,6 +412,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                 onClick={handleCancel}
                 className="ml-4 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors duration-200"
                 aria-label="Close"
+                disabled={isSubmitting || isRemovingPhoto}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -377,6 +434,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     placeholder="e.g. 2024-0001"
                     className={`h-11 transition-all duration-200 ${formErrors.id ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
                     autoFocus={!student}
+                    disabled={isSubmitting || isRemovingPhoto}
                   />
                   {formErrors.id && (
                     <div className="flex items-center gap-1 text-sm text-red-500">
@@ -400,6 +458,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     onChange={(e) => setFormState((prev) => ({ ...prev, first_name: e.target.value }))}
                     placeholder="e.g. Juan"
                     className={`h-11 transition-all duration-200 ${formErrors.first_name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
+                    disabled={isSubmitting || isRemovingPhoto}
                   />
                   {formErrors.first_name && <div className="text-sm text-red-500">{formErrors.first_name}</div>}
                 </div>
@@ -415,6 +474,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     onChange={(e) => setFormState((prev) => ({ ...prev, last_name: e.target.value }))}
                     placeholder="e.g. Dela Cruz"
                     className={`h-11 transition-all duration-200 ${formErrors.last_name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
+                    disabled={isSubmitting || isRemovingPhoto}
                   />
                   {formErrors.last_name && <div className="text-sm text-red-500">{formErrors.last_name}</div>}
                 </div>
@@ -438,6 +498,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                       className={`h-11 w-full transition-all duration-200 ${formErrors.program_id ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
                       maxVisibleRows={8}
                       ariaLabel="College"
+                      disabled={isSubmitting || isRemovingPhoto}
                     />
                   </div>
 
@@ -456,7 +517,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                       const value = e.target.value;
                       setFormState((prev) => ({ ...prev, program_id: value ? parseInt(value) : null }));
                     }}
-                    disabled={!selectedCollegeId}
+                    disabled={!selectedCollegeId || isSubmitting || isRemovingPhoto}
                     className={`h-11 transition-all duration-200 ${formErrors.program_id ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"} ${!selectedCollegeId ? "bg-gray-50" : ""}`}
                   >
                     <option value="">Select a program</option>
@@ -465,8 +526,24 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                         {prog.name} ({prog.code})
                       </option>
                     ))}
+                    {/* Add an option for the current program if it's not in collegePrograms */}
+                    {student && student.program_id && !collegePrograms.some(p => p.id === student.program_id) && (
+                      <option value={student.program_id.toString()} disabled>
+                        {student.program_name} ({student.program_code}) - Program not in selected college
+                      </option>
+                    )}
                   </Select>
                   {formErrors.program_id && <div className="text-sm text-red-500">{formErrors.program_id}</div>}
+                  
+                  {/* Show warning if program doesn't match selected college */}
+                  {student && student.program_id && selectedCollegeId && 
+                  collegePrograms.length > 0 && 
+                  !collegePrograms.some(p => p.id === student.program_id) && (
+                    <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                      Current program ({student.program_name}) is not available in the selected college.
+                      Please select a different program or college.
+                    </div>
+                  )}
                 </div>
 
                 {/* Year level */}
@@ -479,6 +556,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     value={formState.year_level.toString()}
                     onChange={(e) => setFormState((prev) => ({ ...prev, year_level: e.target.value }))}
                     className={`h-11 transition-all duration-200 ${formErrors.year_level ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
+                    disabled={isSubmitting || isRemovingPhoto}
                   >
                     <option value="">Select year level</option>
                     <option value="1">1st Year</option>
@@ -500,6 +578,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     value={formState.gender}
                     onChange={(e) => setFormState((prev) => ({ ...prev, gender: e.target.value }))}
                     className={`h-11 transition-all duration-200 ${formErrors.gender ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"}`}
+                    disabled={isSubmitting || isRemovingPhoto}
                   >
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
@@ -558,6 +637,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                             onChange={handleFileChange}
                             className="hidden"
                             id="student-photo-input"
+                            disabled={isSubmitting || isRemovingPhoto}
                           />
                           <Button
                             type="button"
@@ -567,6 +647,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                               el?.click();
                             }}
                             className="h-9 px-4 text-sm"
+                            disabled={isSubmitting || isRemovingPhoto}
                           >
                             {selectedFile || previewUrl ? "Change Photo" : "Browse File"}
                           </Button>
@@ -623,8 +704,9 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={handleRemovePhoto}
+                                  onClick={handleRemovePhotoClick}
                                   className="text-gray-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0 ml-2"
+                                  disabled={isSubmitting || isRemovingPhoto}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -655,14 +737,14 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     type="button" 
                     variant="outline" 
                     onClick={handleCancel} 
-                    disabled={isSubmitting} 
+                    disabled={isSubmitting || isRemovingPhoto} 
                     className="h-10 px-6 font-medium text-gray-700 hover:bg-gray-50 border-gray-300"
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting} 
+                    disabled={isSubmitting || isRemovingPhoto} 
                     className="h-10 px-6 font-medium bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-sm hover:shadow flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (

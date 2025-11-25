@@ -1,20 +1,16 @@
-"""Service layer for student operations."""
-
+"""Student service using raw SQL (no ORM queries)."""
 from http import HTTPStatus
 from typing import Dict, Optional
 import re
 
-from sqlalchemy import or_
+from sqlalchemy import text, inspect
 from sqlalchemy.exc import IntegrityError
 
 from .. import db
-from ..models.student import Student
-from ..models.program import Program
-from ..models.college import College
 
 
 class StudentService:
-    """Service for managing student operations."""
+    """Service for managing student operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -25,100 +21,106 @@ class StudentService:
         search: str = "",
         search_by: str = "all"
     ) -> Dict:
-        """
-        Retrieve students with pagination, optional sorting and search filtering.
-        """
         try:
-            from sqlalchemy import or_
-            
-            query = Student.query.outerjoin(Program).outerjoin(College)
-            
-            # Apply search filtering if search query is provided
+            where_clauses = []
+            params = {}
+
             if search:
-                search_lower = f"%{search.lower()}%"
+                params["search"] = f"%{search}%"
                 if search_by == "all":
-                    query = query.filter(
-                        or_(
-                            Student.id.ilike(search_lower),
-                            Student.first_name.ilike(search_lower),
-                            Student.last_name.ilike(search_lower),
-                            Program.code.ilike(search_lower),
-                            Student.gender.ilike(search_lower),
-                            db.func.cast(Student.year_level, db.String).ilike(search_lower)
-                        )
+                    where_clauses.append(
+                        "(s.id ILIKE :search OR s.first_name ILIKE :search OR s.last_name ILIKE :search "
+                        "OR p.code ILIKE :search OR s.gender ILIKE :search OR CAST(s.year_level AS TEXT) ILIKE :search)"
                     )
                 elif search_by == "id":
-                    query = query.filter(Student.id.ilike(search_lower))
+                    where_clauses.append("s.id ILIKE :search")
                 elif search_by == "first_name":
-                    query = query.filter(Student.first_name.ilike(search_lower))
+                    where_clauses.append("s.first_name ILIKE :search")
                 elif search_by == "last_name":
-                    query = query.filter(Student.last_name.ilike(search_lower))
+                    where_clauses.append("s.last_name ILIKE :search")
                 elif search_by == "program":
-                    query = query.filter(Program.code.ilike(search_lower))
+                    where_clauses.append("p.code ILIKE :search")
                 elif search_by == "year_level":
-                    query = query.filter(db.func.cast(Student.year_level, db.String).ilike(search_lower))
+                    where_clauses.append("CAST(s.year_level AS TEXT) ILIKE :search")
                 elif search_by == "gender":
-                    query = query.filter(Student.gender.ilike(search_lower))
-            
-            # Get total count before pagination
-            total = query.count()
-            
-            # Apply sorting
+                    where_clauses.append("s.gender ILIKE :search")
+
+            where_sql = ""
+            if where_clauses:
+                where_sql = "WHERE " + " AND ".join(where_clauses)
+
+            count_sql = text(
+                f"SELECT COUNT(*) AS total FROM students s "
+                f"LEFT JOIN programs p ON s.program_id = p.id "
+                f"LEFT JOIN colleges c ON p.college_id = c.id "
+                f"{where_sql}"
+            )
+            total = db.session.execute(count_sql, params).scalar() or 0
+
+            order_clause = ""
             if sort_by:
-                if sort_by == "id":
-                    if order == "desc":
-                        query = query.order_by(Student.id.desc())
-                    else:
-                        query = query.order_by(Student.id.asc())
-                elif sort_by == "first_name":
-                    if order == "desc":
-                        query = query.order_by(Student.first_name.desc())
-                    else:
-                        query = query.order_by(Student.first_name.asc())
-                elif sort_by == "last_name":
-                    if order == "desc":
-                        query = query.order_by(Student.last_name.desc())
-                    else:
-                        query = query.order_by(Student.last_name.asc())
-                elif sort_by == "program":
-                    if order == "desc":
-                        query = query.order_by(db.func.coalesce(Program.code, "").desc())
-                    else:
-                        query = query.order_by(db.func.coalesce(Program.code, "").asc())
-                elif sort_by == "year_level":
-                    if order == "desc":
-                        query = query.order_by(Student.year_level.desc())
-                    else:
-                        query = query.order_by(Student.year_level.asc())
-                elif sort_by == "gender":
-                    if order == "desc":
-                        query = query.order_by(Student.gender.desc())
-                    else:
-                        query = query.order_by(Student.gender.asc())
-            
-            # Apply pagination
+                mapping = {
+                    "id": "s.id",
+                    "first_name": "s.first_name",
+                    "last_name": "s.last_name",
+                    "program": "COALESCE(p.code, '')",
+                    "year_level": "s.year_level",
+                    "gender": "s.gender",
+                }
+                col = mapping.get(sort_by)
+                if col:
+                    direction = "DESC" if order == "desc" else "ASC"
+                    order_clause = f"ORDER BY {col} {direction}"
+
             offset = (page - 1) * per_page
-            students = query.offset(offset).limit(per_page).all()
-            
-            # Calculate pagination metadata
+            params.update({"limit": per_page, "offset": offset})
+
+            data_sql = text(
+                f"""
+                SELECT s.id, s.first_name, s.last_name, s.program_id, s.year_level, s.gender, s.photo,
+                       p.code AS program_code, p.name AS program_name
+                FROM students s
+                LEFT JOIN programs p ON s.program_id = p.id
+                LEFT JOIN colleges c ON p.college_id = c.id
+                {where_sql}
+                {order_clause}
+                LIMIT :limit OFFSET :offset
+                """
+            )
+
+            rows = db.session.execute(data_sql, params).mappings().all()
+            students = []
+            for r in rows:
+                students.append({
+                    "id": r["id"],
+                    "first_name": r["first_name"],
+                    "last_name": r["last_name"],
+                    "program_id": r["program_id"],
+                    "program_name": r["program_name"] if r["program_name"] is not None else "Not Applicable",
+                    "program_code": r["program_code"] if r["program_code"] is not None else "Not Applicable",
+                    "year_level": r["year_level"],
+                    "gender": r["gender"],
+                    "photo": r["photo"],
+                })
+
             total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
             has_next = page < total_pages
             has_prev = page > 1
-            
+
             return {
-                "data": [student.to_dict() for student in students],
+                "data": students,
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
                     "total": total,
                     "total_pages": total_pages,
                     "has_next": has_next,
-                    "has_prev": has_prev
+                    "has_prev": has_prev,
                 },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
-        except Exception as e:
+        except Exception:
             return {
                 "data": None,
                 "pagination": None,
@@ -127,29 +129,31 @@ class StudentService:
             }
 
     @staticmethod
-    def get_by_id(student_id: str) -> Optional[Student]:
-        """
-        Retrieve a student by ID.
-
-        Args:
-            student_id: The ID of the student
-
-        Returns:
-            Student object or None if not found
-        """
-        return Student.query.get(student_id)
+    def get_by_id(student_id: str) -> Optional[Dict]:
+        sql = text(
+            "SELECT s.id, s.first_name, s.last_name, s.program_id, s.year_level, s.gender, s.photo, "
+            "p.code AS program_code, p.name AS program_name "
+            "FROM students s "
+            "LEFT JOIN programs p ON s.program_id = p.id "
+            "WHERE s.id = :id"
+        )
+        row = db.session.execute(sql, {"id": student_id}).mappings().first()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "first_name": row["first_name"],
+            "last_name": row["last_name"],
+            "program_id": row["program_id"],
+            "program_name": row["program_name"] if row["program_name"] else "Not Applicable",
+            "program_code": row["program_code"] if row["program_code"] else "Not Applicable",
+            "year_level": row["year_level"],
+            "gender": row["gender"],
+            "photo": row["photo"],
+        }
 
     @staticmethod
     def create_from_request(data: Dict) -> Dict:
-        """
-        Create a new student from request data.
-
-        Args:
-            data: Request JSON data
-
-        Returns:
-            Dict with 'data', 'error', and 'status'
-        """
         student_id = (data.get("id") or "").strip()
         first_name = (data.get("first_name") or "").strip()
         last_name = (data.get("last_name") or "").strip()
@@ -158,308 +162,234 @@ class StudentService:
         gender = (data.get("gender") or "").strip()
         photo = (data.get("photo") or None)
 
-        # Validate student ID format
         if not re.match(r'^\d{4}-\d{4}$', student_id):
-            return {
-                "data": None,
-                "error": "Student ID must be in format NNNN-NNNN.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
+            return {"data": None, "error": "Student ID must be in format NNNN-NNNN.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Check if student ID already exists
-        existing = Student.query.get(student_id)
+        existing = db.session.execute(text("SELECT id FROM students WHERE id = :id"), {"id": student_id}).scalar()
         if existing:
-            return {
-                "data": None,
-                "error": f"Student ID '{student_id}' already exists.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": f"Student ID '{student_id}' already exists.", "status": HTTPStatus.CONFLICT}
 
-        # Validate program_id (required)
         if program_id is None or program_id == "":
-            return {
-                "data": None,
-                "error": "Program must be selected.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
+            return {"data": None, "error": "Program must be selected.", "status": HTTPStatus.BAD_REQUEST}
         try:
             program_id = int(program_id)
-            program = Program.query.get(program_id)
-            if not program:
-                return {
-                    "data": None,
-                    "error": "Program not found.",
-                    "status": HTTPStatus.NOT_FOUND,
-                }
+            found = db.session.execute(text("SELECT id FROM programs WHERE id = :id"), {"id": program_id}).scalar()
+            if not found:
+                return {"data": None, "error": "Program not found.", "status": HTTPStatus.NOT_FOUND}
         except (ValueError, TypeError):
-            return {
-                "data": None,
-                "error": "Invalid program ID.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
+            return {"data": None, "error": "Invalid program ID.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Validate year level
         try:
             year_level = int(year_level)
             if not 1 <= year_level <= 5:
-                return {
-                    "data": None,
-                    "error": "Year level must be between 1 and 5.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
+                return {"data": None, "error": "Year level must be between 1 and 5.", "status": HTTPStatus.BAD_REQUEST}
         except (ValueError, TypeError):
-            return {
-                "data": None,
-                "error": "Year level must be a valid integer.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
+            return {"data": None, "error": "Year level must be a valid integer.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Validate gender
         if gender not in ["Male", "Female", "Other"]:
-            return {
-                "data": None,
-                "error": "Gender must be Male, Female, or Other.",
-                "status": HTTPStatus.BAD_REQUEST,
-            }
-
-        student = Student(
-            id=student_id,
-            first_name=first_name,
-            last_name=last_name,
-            program_id=program_id,
-            year_level=year_level,
-            gender=gender,
-            photo=photo
-        )
+            return {"data": None, "error": "Gender must be Male, Female, or Other.", "status": HTTPStatus.BAD_REQUEST}
 
         try:
-            db.session.add(student)
+            insert_sql = text(
+                "INSERT INTO students (id, first_name, last_name, program_id, year_level, gender, photo) "
+                "VALUES (:id, :first_name, :last_name, :program_id, :year_level, :gender, :photo) "
+                "RETURNING id, first_name, last_name, program_id, year_level, gender, photo"
+            )
+            result = db.session.execute(insert_sql, {
+                "id": student_id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "program_id": program_id,
+                "year_level": year_level,
+                "gender": gender,
+                "photo": photo
+            })
+            row = result.mappings().first()
             db.session.commit()
-            return {
-                "data": student.to_dict(),
-                "error": None,
-                "status": HTTPStatus.CREATED,
-            }
-        except IntegrityError as e:
+            return {"data": {
+                "id": row["id"],
+                "first_name": row["first_name"],
+                "last_name": row["last_name"],
+                "program_id": row["program_id"],
+                "program_name": "Not Applicable",
+                "program_code": "Not Applicable",
+                "year_level": row["year_level"],
+                "gender": row["gender"],
+                "photo": row["photo"],
+            }, "error": None, "status": HTTPStatus.CREATED}
+        except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "Failed to create student.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "Failed to create student.", "status": HTTPStatus.CONFLICT}
+        except Exception:
+            db.session.rollback()
+            return {"data": None, "error": "Failed to create student.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def update_from_request(student_id: str, data: Dict) -> Dict:
-        """
-        Update an existing student from request data.
+        current = StudentService.get_by_id(student_id)
+        if not current:
+            return {"data": None, "error": "Student not found.", "status": HTTPStatus.NOT_FOUND}
 
-        Args:
-            student_id: The ID of the student to update
-            data: Request JSON data
-
-        Returns:
-            Dict with 'data', 'error', and 'status'
-        """
-        student = StudentService.get_by_id(student_id)
-        if not student:
-            return {
-                "data": None,
-                "error": "Student not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
-
-        # Handle ID change separately (since it's a primary key)
         new_student_id = (data.get("id") or "").strip() if data.get("id") else None
-        first_name = data.get("first_name", "").strip() if data.get("first_name") else None
-        last_name = data.get("last_name", "").strip() if data.get("last_name") else None
-        program_id = data.get("program_id")
-        year_level = data.get("year_level")
-        gender = data.get("gender", "").strip() if data.get("gender") else None
-        photo = data.get("photo") if "photo" in data else None  # explicit
+        first_name = data.get("first_name", None)
+        last_name = data.get("last_name", None)
+        program_id = data.get("program_id", None)
+        year_level = data.get("year_level", None)
+        gender = data.get("gender", None)
+        photo_in_payload = "photo" in data
+        photo = data.get("photo") if photo_in_payload else None
 
-        # If ID is being changed, validate the new ID
         if new_student_id and new_student_id != student_id:
-            # Validate new student ID format
             if not re.match(r'^\d{4}-\d{4}$', new_student_id):
-                return {
-                    "data": None,
-                    "error": "Student ID must be in format NNNN-NNNN.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            
-            # Check if new ID already exists
-            existing = Student.query.get(new_student_id)
-            if existing:
-                return {
-                    "data": None,
-                    "error": f"Student ID '{new_student_id}' already exists.",
-                    "status": HTTPStatus.CONFLICT,
-                }
+                return {"data": None, "error": "Student ID must be in format NNNN-NNNN.", "status": HTTPStatus.BAD_REQUEST}
+            exists = db.session.execute(text("SELECT id FROM students WHERE id = :id"), {"id": new_student_id}).scalar()
+            if exists:
+                return {"data": None, "error": f"Student ID '{new_student_id}' already exists.", "status": HTTPStatus.CONFLICT}
+
+        params = {}
+        set_clauses = []
 
         if first_name is not None:
+            first_name = first_name.strip()
             if not first_name:
-                return {
-                    "data": None,
-                    "error": "First name cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            student.first_name = first_name
+                return {"data": None, "error": "First name cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
+            set_clauses.append("first_name = :first_name")
+            params["first_name"] = first_name
 
         if last_name is not None:
+            last_name = last_name.strip()
             if not last_name:
-                return {
-                    "data": None,
-                    "error": "Last name cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            student.last_name = last_name
+                return {"data": None, "error": "Last name cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
+            set_clauses.append("last_name = :last_name")
+            params["last_name"] = last_name
 
         if program_id is not None:
             if program_id == "":
-                student.program_id = None
+                set_clauses.append("program_id = NULL")
             else:
                 try:
-                    program_id = int(program_id)
-                    program = Program.query.get(program_id)
-                    if not program:
-                        return {
-                            "data": None,
-                            "error": "Program not found.",
-                            "status": HTTPStatus.NOT_FOUND,
-                        }
-                    student.program_id = program_id
+                    pid = int(program_id)
+                    found = db.session.execute(text("SELECT id FROM programs WHERE id = :id"), {"id": pid}).scalar()
+                    if not found:
+                        return {"data": None, "error": "Program not found.", "status": HTTPStatus.NOT_FOUND}
+                    set_clauses.append("program_id = :program_id")
+                    params["program_id"] = pid
                 except (ValueError, TypeError):
-                    return {
-                        "data": None,
-                        "error": "Invalid program ID.",
-                        "status": HTTPStatus.BAD_REQUEST,
-                    }
+                    return {"data": None, "error": "Invalid program ID.", "status": HTTPStatus.BAD_REQUEST}
 
         if year_level is not None:
             try:
-                year_level = int(year_level)
-                if not 1 <= year_level <= 5:
-                    return {
-                        "data": None,
-                        "error": "Year level must be between 1 and 5.",
-                        "status": HTTPStatus.BAD_REQUEST,
-                    }
-                student.year_level = year_level
+                yl = int(year_level)
+                if not 1 <= yl <= 5:
+                    return {"data": None, "error": "Year level must be between 1 and 5.", "status": HTTPStatus.BAD_REQUEST}
+                set_clauses.append("year_level = :year_level")
+                params["year_level"] = yl
             except (ValueError, TypeError):
-                return {
-                    "data": None,
-                    "error": "Year level must be a valid integer.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
+                return {"data": None, "error": "Year level must be a valid integer.", "status": HTTPStatus.BAD_REQUEST}
 
         if gender is not None:
+            gender = gender.strip()
             if gender not in ["Male", "Female", "Other"]:
-                return {
-                    "data": None,
-                    "error": "Gender must be Male, Female, or Other.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            student.gender = gender
+                return {"data": None, "error": "Gender must be Male, Female, or Other.", "status": HTTPStatus.BAD_REQUEST}
+            set_clauses.append("gender = :gender")
+            params["gender"] = gender
 
-        # Photo handling: if photo provided explicitly in payload, set it (can be None/empty to remove)
-        if "photo" in data:
-            # Accept empty string or None to clear
+        if photo_in_payload:
             if photo in ("", None):
-                student.photo = None
+                set_clauses.append("photo = NULL")
             else:
-                student.photo = photo
+                set_clauses.append("photo = :photo")
+                params["photo"] = photo
 
         try:
-            # If ID is being changed, we need to handle it specially
             if new_student_id and new_student_id != student_id:
-                # Update the primary key by deleting old and creating new
-                db.session.delete(student)
-                db.session.flush()
+                # Create a savepoint for nested transaction
+                db.session.begin_nested()
                 
-                new_student = Student(
-                    id=new_student_id,
-                    first_name=student.first_name,
-                    last_name=student.last_name,
-                    program_id=student.program_id,
-                    year_level=student.year_level,
-                    gender=student.gender,
-                    photo=student.photo
+                existing_row = db.session.execute(text("SELECT id, first_name, last_name, program_id, year_level, gender, photo FROM students WHERE id = :id"), {"id": student_id}).mappings().first()
+                if not existing_row:
+                    db.session.rollback()
+                    return {"data": None, "error": "Student not found.", "status": HTTPStatus.NOT_FOUND}
+
+                final_first_name = params.get("first_name", existing_row["first_name"])
+                final_last_name = params.get("last_name", existing_row["last_name"])
+                final_program_id = params.get("program_id", existing_row["program_id"])
+                final_year_level = params.get("year_level", existing_row["year_level"])
+                final_gender = params.get("gender", existing_row["gender"])
+                final_photo = params.get("photo", existing_row["photo"]) if photo_in_payload else existing_row["photo"]
+
+                insert_sql = text(
+                    "INSERT INTO students (id, first_name, last_name, program_id, year_level, gender, photo) "
+                    "VALUES (:id, :first_name, :last_name, :program_id, :year_level, :gender, :photo)"
                 )
-                db.session.add(new_student)
+                db.session.execute(insert_sql, {
+                    "id": new_student_id,
+                    "first_name": final_first_name,
+                    "last_name": final_last_name,
+                    "program_id": final_program_id,
+                    "year_level": final_year_level,
+                    "gender": final_gender,
+                    "photo": final_photo
+                })
+
+                inspector = inspect(db.engine)
+                all_tables = inspector.get_table_names()
+                for table in all_tables:
+                    if table == "students":
+                        continue
+                    fks = inspector.get_foreign_keys(table)
+                    for fk in fks:
+                        referred_table = fk.get("referred_table") or fk.get("referred_table_name") or fk.get("referred_table")
+                        if referred_table == "students":
+                            constrained_cols = fk.get("constrained_columns") or fk.get("constrained_column") or fk.get("constrained_columns", [])
+                            for col in constrained_cols:
+                                update_fk_sql = text(f"UPDATE {table} SET {col} = :new_id WHERE {col} = :old_id")
+                                db.session.execute(update_fk_sql, {"new_id": new_student_id, "old_id": student_id})
+
+                db.session.execute(text("DELETE FROM students WHERE id = :id"), {"id": student_id})
+                
+                # Release the savepoint
                 db.session.commit()
-                return {
-                    "data": new_student.to_dict(),
-                    "error": None,
-                    "status": HTTPStatus.OK,
-                }
+                
+                new_student = StudentService.get_by_id(new_student_id)
+                if new_student:
+                    return {"data": new_student, "error": None, "status": HTTPStatus.OK}
+                return {"data": None, "error": "Failed to change student ID.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
             else:
+                if not set_clauses:
+                    return {"data": StudentService.get_by_id(student_id), "error": None, "status": HTTPStatus.OK}
+
+                params["id"] = student_id
+                update_sql = text(f"UPDATE students SET {', '.join(set_clauses)} WHERE id = :id")
+                db.session.execute(update_sql, params)
                 db.session.commit()
-                return {
-                    "data": student.to_dict(),
-                    "error": None,
-                    "status": HTTPStatus.OK,
-                }
+                return {"data": StudentService.get_by_id(student_id), "error": None, "status": HTTPStatus.OK}
         except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "Failed to update student.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "Failed to update student.", "status": HTTPStatus.CONFLICT}
+        except Exception as e:
+            db.session.rollback()
+            return {"data": None, "error": f"Failed to update student: {e}", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def delete_by_id(student_id: str) -> Dict:
-        """
-        Delete a student by ID.
-
-        Args:
-            student_id: The ID of the student to delete
-
-        Returns:
-            Dict with 'error' and 'status'
-        """
-        student = StudentService.get_by_id(student_id)
-        if not student:
-            return {
-                "error": "Student not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
+        existing = db.session.execute(text("SELECT id, photo FROM students WHERE id = :id"), {"id": student_id}).mappings().first()
+        if not existing:
+            return {"error": "Student not found.", "status": HTTPStatus.NOT_FOUND}
 
         try:
-            db.session.delete(student)
+            db.session.execute(text("DELETE FROM students WHERE id = :id"), {"id": student_id})
             db.session.commit()
-            return {
-                "error": None,
-                "status": HTTPStatus.NO_CONTENT,
-            }
-        except Exception as e:
+            return {"error": None, "status": HTTPStatus.NO_CONTENT}
+        except Exception:
             db.session.rollback()
-            return {
-                "error": "Failed to delete student.",
-                "status": HTTPStatus.INTERNAL_SERVER_ERROR,
-            }
+            return {"error": "Failed to delete student.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def get_programs_by_college(college_id: int) -> Dict:
-        """
-        Get all programs for a specific college.
-
-        Args:
-            college_id: The ID of the college
-
-        Returns:
-            Dict with 'data' (list of programs) or 'error' and 'status'
-        """
         try:
-            programs = Program.query.filter_by(college_id=college_id).all()
-            return {
-                "data": [program.to_dict() for program in programs],
-                "error": None,
-                "status": HTTPStatus.OK,
-            }
-        except Exception as e:
-            return {
-                "data": None,
-                "error": "Failed to retrieve programs.",
-                "status": HTTPStatus.INTERNAL_SERVER_ERROR,
-            }
+            rows = db.session.execute(text("SELECT id, college_id, code, name FROM programs WHERE college_id = :college_id"), {"college_id": college_id}).mappings().all()
+            programs = [{"id": r["id"], "college_id": r["college_id"], "code": r["code"], "name": r["name"]} for r in rows]
+            return {"data": programs, "error": None, "status": HTTPStatus.OK}
+        except Exception:
+            return {"data": None, "error": "Failed to retrieve programs.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}

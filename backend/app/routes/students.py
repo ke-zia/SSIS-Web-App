@@ -98,7 +98,14 @@ def update_student(student_id: str):
     if not existing_student:
         return jsonify({"message": "Student not found."}), HTTPStatus.NOT_FOUND
 
-    old_photo = getattr(existing_student, "photo", None)
+    # StudentService.get_by_id returns a dict when using raw SQL; read photo accordingly.
+    old_photo = None
+    if isinstance(existing_student, dict):
+        old_photo = existing_student.get("photo")
+    else:
+        # In case it returns a model instance in another config
+        old_photo = getattr(existing_student, "photo", None)
+
     new_photo_in_payload = "photo" in data
     new_photo = data.get("photo") if new_photo_in_payload else None
 
@@ -120,6 +127,7 @@ def update_student(student_id: str):
 
             if should_delete_old:
                 try:
+                    # Use server-side delete helper that uses the SUPABASE service role key
                     delete_object(old_photo)
                 except Exception as e:
                     # Log a warning but do not fail the API response
@@ -143,7 +151,12 @@ def delete_student(student_id: str):
     if not student:
         return jsonify({"message": "Student not found."}), HTTPStatus.NOT_FOUND
 
-    photo_path = getattr(student, "photo", None)
+    # Read photo path from dict or model instance
+    photo_path = None
+    if isinstance(student, dict):
+        photo_path = student.get("photo")
+    else:
+        photo_path = getattr(student, "photo", None)
 
     result = StudentService.delete_by_id(student_id)
     if result["error"]:

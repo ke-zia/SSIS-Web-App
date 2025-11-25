@@ -1,59 +1,43 @@
-"""Validation utilities."""
+"""Validation utilities using raw SQL (no ORM queries)."""
 
-from typing import Optional
+from typing import Optional, Tuple
+
+from sqlalchemy import text
 
 from .. import db
-from ..models.college import College
-from ..models.program import Program
 
 
-def validate_college_code_unique(code: str, exclude_id: Optional[int] = None) -> tuple[bool, str]:
-    """
-    Validate that a college code is unique.
-
-    Args:
-        code: The college code to validate
-        exclude_id: Optional ID to exclude from the check (for updates)
-
-    Returns:
-        Tuple of (is_valid, error_message)
-    """
-    code = code.strip().upper()
-    if not code:
+def validate_college_code_unique(code: str, exclude_id: Optional[int] = None) -> Tuple[bool, str]:
+    code_norm = (code or "").strip().upper()
+    if not code_norm:
         return False, "College code cannot be empty."
 
-    query = College.query.filter(College.code.ilike(code))
+    params = {"code": code_norm}
+    sql = "SELECT id FROM colleges WHERE UPPER(code) = :code"
     if exclude_id:
-        query = query.filter(College.id != exclude_id)
+        sql += " AND id != :exclude_id"
+        params["exclude_id"] = exclude_id
 
-    existing = query.first()
-    if existing:
-        return False, f"College code '{code}' already exists."
+    row = db.session.execute(text(sql), params).mappings().first()
+    if row:
+        return False, f"College code '{code_norm}' already exists."
 
     return True, ""
 
 
-def validate_program_code_unique(code: str, exclude_id: Optional[int] = None) -> tuple[bool, str]:
-    """
-    Validate that a program code is unique.
-
-    Args:
-        code: The program code to validate
-        exclude_id: Optional ID to exclude from the check (for updates)
-
-    Returns:
-        Tuple of (is_valid, error_message)
-    """
-    code = code.strip().upper()
-    if not code:
+def validate_program_code_unique(code: str, exclude_id: Optional[int] = None) -> Tuple[bool, str]:
+    code_norm = (code or "").strip().upper()
+    if not code_norm:
         return False, "Program code cannot be empty."
 
-    query = Program.query.filter(Program.code.ilike(code))
+    params = {"code": code_norm}
+    sql = "SELECT id FROM programs WHERE UPPER(code) = :code"
     if exclude_id:
-        query = query.filter(Program.id != exclude_id)
+        sql += " AND id != :exclude_id"
+        params["exclude_id"] = exclude_id
 
-    existing = query.first()
-    if existing:
-        return False, f"Program code '{code}' already exists."
+    row = db.session.execute(text(sql), params).mappings().first()
+    if row:
+        return False, f"Program code '{code_norm}' already exists."
 
     return True, ""

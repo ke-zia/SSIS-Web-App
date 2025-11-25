@@ -1,4 +1,3 @@
-# added upload helper for server-side uploads
 import os
 import requests
 from urllib.parse import quote

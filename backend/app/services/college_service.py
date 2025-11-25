@@ -1,15 +1,16 @@
+"""College service using raw SQL"""
 from http import HTTPStatus
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from .. import db
-from ..models.college import College
 from ..utils.validators import validate_college_code_unique
 
 
 class CollegeService:
-    """Service for managing college operations."""
+    """Service for managing college operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -20,82 +21,64 @@ class CollegeService:
         search: str = "",
         search_by: str = "all"
     ) -> Dict:
-        """
-        Retrieve colleges with pagination, optional sorting and search filtering.
-
-        Args:
-            page: Page number (1-indexed)
-            per_page: Number of items per page
-            sort_by: Column to sort by ('code' or 'name'). Empty string means no sorting.
-            order: Sort order ('asc' or 'desc'). Defaults to 'asc'.
-            search: Search query string. Empty string means no filtering.
-            search_by: Column to search in ('all', 'code', or 'name'). Defaults to 'all'.
-
-        Returns:
-            Dict with paginated data, total count, and pagination metadata
-        """
         try:
-            from sqlalchemy import or_, func
-            
-            query = College.query
-            
-            # Apply search filtering if search query is provided
+            # Base where clause and params
+            where_clauses = []
+            params = {}
+
             if search:
-                search_lower = f"%{search.lower()}%"
+                params["search"] = f"%{search}%"
                 if search_by == "all":
-                    # Search in both code and name
-                    query = query.filter(
-                        or_(
-                            College.code.ilike(search_lower),
-                            College.name.ilike(search_lower)
-                        )
-                    )
+                    where_clauses.append("(code ILIKE :search OR name ILIKE :search)")
                 elif search_by == "code":
-                    # Search only in code
-                    query = query.filter(College.code.ilike(search_lower))
+                    where_clauses.append("code ILIKE :search")
                 elif search_by == "name":
-                    # Search only in name
-                    query = query.filter(College.name.ilike(search_lower))
-            
-            # Get total count before pagination
-            total = query.count()
-            
-            # Apply sorting if sort_by is provided
-            if sort_by:
-                if sort_by == "code":
-                    if order == "desc":
-                        query = query.order_by(College.code.desc())
-                    else:
-                        query = query.order_by(College.code.asc())
-                elif sort_by == "name":
-                    if order == "desc":
-                        query = query.order_by(College.name.desc())
-                    else:
-                        query = query.order_by(College.name.asc())
-            
-            # Apply pagination
+                    where_clauses.append("name ILIKE :search")
+
+            where_sql = ""
+            if where_clauses:
+                where_sql = "WHERE " + " AND ".join(where_clauses)
+
+            # Count total
+            count_sql = text(f"SELECT COUNT(*) AS total FROM colleges {where_sql}")
+            total = db.session.execute(count_sql, params).scalar() or 0
+
+            # Sorting
+            order_clause = ""
+            if sort_by in ("code", "name"):
+                col = "code" if sort_by == "code" else "name"
+                direction = "DESC" if order == "desc" else "ASC"
+                order_clause = f"ORDER BY {col} {direction}"
+
+            # Pagination
             offset = (page - 1) * per_page
-            colleges = query.offset(offset).limit(per_page).all()
-            
-            # Calculate pagination metadata
+            params.update({"limit": per_page, "offset": offset})
+
+            data_sql = text(
+                f"SELECT id, code, name FROM colleges {where_sql} {order_clause} LIMIT :limit OFFSET :offset"
+            )
+            rows = db.session.execute(data_sql, params).mappings().all()
+
+            colleges = [{"id": r["id"], "code": r["code"], "name": r["name"]} for r in rows]
+
             total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
             has_next = page < total_pages
             has_prev = page > 1
-            
+
             return {
-                "data": [college.to_dict() for college in colleges],
+                "data": colleges,
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
                     "total": total,
                     "total_pages": total_pages,
                     "has_next": has_next,
-                    "has_prev": has_prev
+                    "has_prev": has_prev,
                 },
                 "error": None,
                 "status": HTTPStatus.OK,
             }
-        except Exception as e:
+        except Exception:
             return {
                 "data": None,
                 "pagination": None,
@@ -104,42 +87,23 @@ class CollegeService:
             }
 
     @staticmethod
-    def get_by_id(college_id: int) -> Optional[College]:
-        """
-        Retrieve a college by ID.
-
-        Args:
-            college_id: The ID of the college
-
-        Returns:
-            College object or None if not found
-        """
-        return College.query.get(college_id)
+    def get_by_id(college_id: int) -> Optional[Dict]:
+        sql = text("SELECT id, code, name FROM colleges WHERE id = :id")
+        row = db.session.execute(sql, {"id": college_id}).mappings().first()
+        if not row:
+            return None
+        return {"id": row["id"], "code": row["code"], "name": row["name"]}
 
     @staticmethod
-    def get_by_code(code: str) -> Optional[College]:
-        """
-        Retrieve a college by code (case-insensitive).
-
-        Args:
-            code: The college code
-
-        Returns:
-            College object or None if not found
-        """
-        return College.query.filter(College.code.ilike(code.strip())).first()
+    def get_by_code(code: str) -> Optional[Dict]:
+        sql = text("SELECT id, code, name FROM colleges WHERE code ILIKE :code LIMIT 1")
+        row = db.session.execute(sql, {"code": code.strip()}).mappings().first()
+        if not row:
+            return None
+        return {"id": row["id"], "code": row["code"], "name": row["name"]}
 
     @staticmethod
     def create_from_request(data: Dict) -> Dict:
-        """
-        Create a new college from request data.
-
-        Args:
-            data: Request JSON data containing 'code' and 'name'
-
-        Returns:
-            Dict with 'data' (college dict), 'error', and 'status'
-        """
         code = (data.get("code") or "").strip()
         name = (data.get("name") or "").strip()
 
@@ -150,7 +114,6 @@ class CollegeService:
                 "status": HTTPStatus.BAD_REQUEST,
             }
 
-        # Validate unique code
         is_valid, error_msg = validate_college_code_unique(code)
         if not is_valid:
             status = (
@@ -158,130 +121,88 @@ class CollegeService:
                 if "already exists" in error_msg.lower()
                 else HTTPStatus.BAD_REQUEST
             )
-            return {
-                "data": None,
-                "error": error_msg,
-                "status": status,
-            }
-
-        college = College(code=code, name=name)
+            return {"data": None, "error": error_msg, "status": status}
 
         try:
-            db.session.add(college)
+            insert_sql = text(
+                "INSERT INTO colleges (code, name) VALUES (:code, :name) RETURNING id, code, name"
+            )
+            result = db.session.execute(insert_sql, {"code": code, "name": name})
+            row = result.mappings().first()
             db.session.commit()
-            return {
-                "data": college.to_dict(),
-                "error": None,
-                "status": HTTPStatus.CREATED,
-            }
+            return {"data": {"id": row["id"], "code": row["code"], "name": row["name"]}, "error": None, "status": HTTPStatus.CREATED}
         except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "A college with this code already exists.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "A college with this code already exists.", "status": HTTPStatus.CONFLICT}
+        except Exception:
+            db.session.rollback()
+            return {"data": None, "error": "Failed to create college.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def update_from_request(college_id: int, data: Dict) -> Dict:
-        """
-        Update an existing college from request data.
+        existing = CollegeService.get_by_id(college_id)
+        if not existing:
+            return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
 
-        Args:
-            college_id: The ID of the college to update
-            data: Request JSON data containing 'code' and/or 'name'
+        code = data.get("code", None)
+        name = data.get("name", None)
 
-        Returns:
-            Dict with 'data' (college dict), 'error', and 'status'
-        """
-        college = CollegeService.get_by_id(college_id)
-        if not college:
-            return {
-                "data": None,
-                "error": "College not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
-
-        code = data.get("code", "").strip() if data.get("code") else None
-        name = data.get("name", "").strip() if data.get("name") else None
-
+        # Normalize provided values
         if code is not None:
+            code = code.strip()
             if not code:
-                return {
-                    "data": None,
-                    "error": "College code cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-
-            # Validate unique code (excluding current college)
+                return {"data": None, "error": "College code cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
             is_valid, error_msg = validate_college_code_unique(code, exclude_id=college_id)
             if not is_valid:
-                status = (
-                    HTTPStatus.CONFLICT
-                    if "already exists" in error_msg.lower()
-                    else HTTPStatus.BAD_REQUEST
-                )
-                return {
-                    "data": None,
-                    "error": error_msg,
-                    "status": status,
-                }
-
-            college.code = code
+                status = HTTPStatus.CONFLICT if "already exists" in error_msg.lower() else HTTPStatus.BAD_REQUEST
+                return {"data": None, "error": error_msg, "status": status}
 
         if name is not None:
+            name = name.strip()
             if not name:
-                return {
-                    "data": None,
-                    "error": "College name cannot be empty.",
-                    "status": HTTPStatus.BAD_REQUEST,
-                }
-            college.name = name
+                return {"data": None, "error": "College name cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
 
+        # Build dynamic update
+        set_clauses = []
+        params = {"id": college_id}
+        if code is not None:
+            set_clauses.append("code = :code")
+            params["code"] = code
+        if name is not None:
+            set_clauses.append("name = :name")
+            params["name"] = name
+
+        if not set_clauses:
+            # Nothing to update
+            return {"data": existing, "error": None, "status": HTTPStatus.OK}
+
+        update_sql = text(f"UPDATE colleges SET {', '.join(set_clauses)} WHERE id = :id RETURNING id, code, name")
         try:
+            result = db.session.execute(update_sql, params)
+            row = result.mappings().first()
+            if not row:
+                db.session.rollback()
+                return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
             db.session.commit()
-            return {
-                "data": college.to_dict(),
-                "error": None,
-                "status": HTTPStatus.OK,
-            }
+            return {"data": {"id": row["id"], "code": row["code"], "name": row["name"]}, "error": None, "status": HTTPStatus.OK}
         except IntegrityError:
             db.session.rollback()
-            return {
-                "data": None,
-                "error": "A college with this code already exists.",
-                "status": HTTPStatus.CONFLICT,
-            }
+            return {"data": None, "error": "A college with this code already exists.", "status": HTTPStatus.CONFLICT}
+        except Exception:
+            db.session.rollback()
+            return {"data": None, "error": "Failed to update college.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
     @staticmethod
     def delete_by_id(college_id: int) -> Dict:
-        """
-        Delete a college by ID.
-
-        Args:
-            college_id: The ID of the college to delete
-
-        Returns:
-            Dict with 'error' and 'status'
-        """
-        college = CollegeService.get_by_id(college_id)
-        if not college:
-            return {
-                "error": "College not found.",
-                "status": HTTPStatus.NOT_FOUND,
-            }
+        existing = CollegeService.get_by_id(college_id)
+        if not existing:
+            return {"error": "College not found.", "status": HTTPStatus.NOT_FOUND}
 
         try:
-            db.session.delete(college)
+            delete_sql = text("DELETE FROM colleges WHERE id = :id")
+            db.session.execute(delete_sql, {"id": college_id})
             db.session.commit()
-            return {
-                "error": None,
-                "status": HTTPStatus.NO_CONTENT,
-            }
-        except Exception as e:
+            return {"error": None, "status": HTTPStatus.NO_CONTENT}
+        except Exception:
             db.session.rollback()
-            return {
-                "error": "Failed to delete college.",
-                "status": HTTPStatus.INTERNAL_SERVER_ERROR,
-            }
-
+            return {"error": "Failed to delete college.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
