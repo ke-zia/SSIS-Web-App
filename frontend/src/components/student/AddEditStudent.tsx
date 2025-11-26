@@ -83,7 +83,32 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     }));
   }, [colleges]);
 
-  // When modal opens, set form state and selected college (if editing)
+  const loadProgramsForCollege = async (collegeId: number | null) => {
+    if (collegeId) {
+      // College is selected - load programs for that college
+      try {
+        const programs = await getProgramsByCollege(collegeId);
+        setCollegePrograms(programs);
+      } catch (error) {
+        console.error("Failed to load programs:", error);
+        setCollegePrograms([]);
+      }
+    } else {
+      // No college selected - show at least the student's current program
+      if (student?.program_id) {
+        const currentProgram = allPrograms.find(p => p.id === student.program_id);
+        if (currentProgram) {
+          // Add the current program to the list if it exists
+          setCollegePrograms([currentProgram]);
+        } else {
+          setCollegePrograms([]);
+        }
+      } else {
+        setCollegePrograms([]);
+      }
+    }
+  };
+
   useEffect(() => {
     if (open) {
       if (student) {
@@ -100,18 +125,39 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
         setPreviewUrl(student.photo ? getPhotoPublicUrl(student.photo) : null);
         setRemoveExistingPhoto(false);
 
-        // If editing and student has program_id, try to find that program's college
+        // If editing and student has program_id
         if (student.program_id) {
           const program = allPrograms.find((p) => p.id === student.program_id);
           if (program) {
-            setSelectedCollegeId(program.college_id);
+            // Set the college if program has one
+            if (program.college_id) {
+              setSelectedCollegeId(program.college_id);
+            } else {
+              // Program exists but has null college_id
+              setSelectedCollegeId(null);
+              // Show the student's current program in the dropdown
+              setCollegePrograms([program]);
+            }
           } else {
+            // Program not found in allPrograms
             setSelectedCollegeId(null);
+            // Create a placeholder program object
+            const placeholderProgram: Program = {
+              id: student.program_id,
+              college_id: null,
+              college_name: "",
+              college_code: "",
+              code: student.program_code || "",
+              name: student.program_name || "Unknown Program"
+            };
+            setCollegePrograms([placeholderProgram]);
           }
         } else {
           setSelectedCollegeId(null);
+          setCollegePrograms([]);
         }
       } else {
+        // Reset for new student
         setFormState({
           id: "",
           first_name: "",
@@ -121,64 +167,20 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
           gender: "",
         });
         setSelectedCollegeId(null);
+        setCollegePrograms([]);
         setExistingPhotoPath(null);
         setSelectedFile(null);
         setPreviewUrl(null);
         setRemoveExistingPhoto(false);
       }
       setFormErrors({});
-      setCollegePrograms([]);
-      setRemovePhotoOpen(false); // Reset photo removal dialog
+      setRemovePhotoOpen(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, student, allPrograms]);
 
-  // Update the useEffect that loads college programs:
   useEffect(() => {
-    const loadCollegePrograms = async () => {
-      if (selectedCollegeId) {
-        try {
-          const programs = await getProgramsByCollege(selectedCollegeId);
-          setCollegePrograms(programs);
-          
-          // After loading programs, if editing a student with program_id,
-          // ensure it's still selected if it exists in the loaded programs
-          if (student && student.program_id) {
-            const programExists = programs.some((p) => p.id === student.program_id);
-            if (programExists) {
-              // Program exists in this college - keep it selected
-              // Only update if formState doesn't already have it
-              if (formState.program_id !== student.program_id) {
-                setFormState((prev) => ({ ...prev, program_id: student.program_id }));
-              }
-            } else {
-              // Program doesn't exist in this college - clear it
-              setFormState((prev) => ({ ...prev, program_id: null }));
-            }
-          }
-        } catch (error) {
-          console.error("Failed to load programs:", error);
-          setCollegePrograms([]);
-        }
-      } else {
-        setCollegePrograms([]);
-      }
-    };
-
-    loadCollegePrograms();
-  }, [selectedCollegeId, student]); // Add student to dependencies
-
-  // Add a new useEffect to handle the edge case when college is already selected
-  // but programs haven't loaded yet
-  useEffect(() => {
-    if (open && student && selectedCollegeId && collegePrograms.length > 0) {
-      // When college programs are loaded, check if student's program should be selected
-      const programExists = collegePrograms.some((p) => p.id === student.program_id);
-      if (programExists && formState.program_id !== student.program_id) {
-        setFormState((prev) => ({ ...prev, program_id: student.program_id }));
-      }
-    }
-  }, [open, student, selectedCollegeId, collegePrograms, formState.program_id]);
+    loadProgramsForCollege(selectedCollegeId);
+  }, [selectedCollegeId]);
 
   // Handle backdrop click — close when user clicks the overlay (not the content)
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -242,7 +244,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     }
   };
 
-  // Replace the existing handleSubmit function with this updated version
+  // Updated submit flow: create/update student first, upload photo only after DB op succeeds.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
@@ -288,7 +290,8 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
 
       const program_code = selectedProgram ? selectedProgram.code : "";
 
-      const payload: any = {
+      // Build base payload WITHOUT photo (we will attach photo only after DB op succeeds)
+      const basePayload: any = {
         id: formState.id.trim(),
         first_name: formState.first_name.trim(),
         last_name: formState.last_name.trim(),
@@ -298,40 +301,51 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
         gender: formState.gender,
       };
 
-      // Handle photo upload / replacement / removal
-      if (selectedFile) {
-        // Upload new photo first
-        const { path } = await uploadStudentPhoto(selectedFile);
-        payload.photo = path;
-
-        // If editing and had an existing photo, remove it AFTER successful upload
-        if (isEdit && existingPhotoPath) {
-          try {
-            await deleteStudentPhoto(existingPhotoPath);
-          } catch (err) {
-            console.warn("Failed to delete old photo (non-fatal):", err);
-          }
-        }
-      } else if (removeExistingPhoto) {
-        // If user requested removal of existing photo
-        if (existingPhotoPath) {
-          try {
-            await deleteStudentPhoto(existingPhotoPath);
-          } catch (err) {
-            console.warn("Failed to delete photo:", err);
-          }
-        }
-        // Indicate to backend to clear the photo column
-        payload.photo = "";
-      } else if (existingPhotoPath && isEdit) {
-        // No change to photo: keep existing path (do nothing)
-        // Do not include photo in payload so backend won't change it
+      // Special-case: if editing and user requested removal of existing photo and no new file selected,
+      // include photo: "" so backend clears the column (and will delete storage object server-side).
+      if (isEdit && removeExistingPhoto && !selectedFile) {
+        basePayload.photo = "";
       }
 
+      let createdOrUpdatedStudentId: string | null = null;
+
       if (isEdit && student) {
-        await updateStudent(student.id, payload);
+        // Capture the updated student returned from the backend.
+        // updateStudent returns the updated student record (including id which may have changed).
+        const updated = await updateStudent(student.id, basePayload);
+        createdOrUpdatedStudentId = updated?.id ?? student.id;
       } else {
-        await createStudent(payload);
+        // Create new student (without photo). Uploading happens afterwards.
+        const created = await createStudent(basePayload);
+        createdOrUpdatedStudentId = created.id;
+      }
+
+      // If a file is selected, upload it only AFTER the DB operation succeeded.
+      if (selectedFile && createdOrUpdatedStudentId) {
+        let newPhotoPath: string | null = null;
+        try {
+          const uploadRes = await uploadStudentPhoto(selectedFile);
+          newPhotoPath = uploadRes.path;
+
+          // Attach uploaded photo path to student with an update call.
+          // Use the authoritative id returned from create/update above.
+          await updateStudent(createdOrUpdatedStudentId, { photo: newPhotoPath });
+
+        } catch (uploadOrAttachError) {
+          // If attaching the uploaded photo to the student fails, clean up the uploaded file to avoid orphans.
+          try {
+            if (newPhotoPath) {
+              await deleteStudentPhoto(newPhotoPath);
+            }
+          } catch (cleanupErr) {
+            console.warn("Failed to cleanup uploaded photo after attach failure:", cleanupErr);
+          }
+          // Surface an error to the form
+          const message = uploadOrAttachError instanceof Error ? uploadOrAttachError.message : "Failed to upload or attach photo.";
+          setFormErrors({ general: message });
+          // Stop here (do not close modal) so user can retry or cancel.
+          return;
+        }
       }
 
       onOpenChange(false);
@@ -492,6 +506,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                       onChange={(val) => {
                         const id = val ? parseInt(val) : null;
                         setSelectedCollegeId(id);
+                        // Don't manually set collegePrograms here - let loadProgramsForCollege handle it
                       }}
                       options={sortedCollegeOptions.map((c) => ({ value: c.value, label: c.label }))}
                       placeholder="Select a college"
@@ -517,8 +532,12 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                       const value = e.target.value;
                       setFormState((prev) => ({ ...prev, program_id: value ? parseInt(value) : null }));
                     }}
-                    disabled={!selectedCollegeId || isSubmitting || isRemovingPhoto}
-                    className={`h-11 transition-all duration-200 ${formErrors.program_id ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-red-500 focus:ring-red-500"} ${!selectedCollegeId ? "bg-gray-50" : ""}`}
+                    disabled={isSubmitting || isRemovingPhoto}
+                    className={`h-11 transition-all duration-200 ${
+                      formErrors.program_id
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    }`}
                   >
                     <option value="">Select a program</option>
                     {collegePrograms.map((prog) => (
@@ -526,22 +545,14 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                         {prog.name} ({prog.code})
                       </option>
                     ))}
-                    {/* Add an option for the current program if it's not in collegePrograms */}
-                    {student && student.program_id && !collegePrograms.some(p => p.id === student.program_id) && (
-                      <option value={student.program_id.toString()} disabled>
-                        {student.program_name} ({student.program_code}) - Program not in selected college
-                      </option>
-                    )}
                   </Select>
                   {formErrors.program_id && <div className="text-sm text-red-500">{formErrors.program_id}</div>}
                   
-                  {/* Show warning if program doesn't match selected college */}
-                  {student && student.program_id && selectedCollegeId && 
-                  collegePrograms.length > 0 && 
-                  !collegePrograms.some(p => p.id === student.program_id) && (
-                    <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                      Current program ({student.program_name}) is not available in the selected college.
-                      Please select a different program or college.
+                  {/* Info message when no college is selected but program exists */}
+                  {!selectedCollegeId && student?.program_id && collegePrograms.length === 0 && (
+                    <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                      <strong>Note:</strong> Your current program "{student.program_name}" is not associated with any college.
+                      You can keep this program or select a college to choose from its available programs.
                     </div>
                   )}
                 </div>
