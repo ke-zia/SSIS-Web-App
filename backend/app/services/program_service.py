@@ -1,4 +1,3 @@
-"""Program service using raw SQL"""
 from http import HTTPStatus
 from typing import Dict, Optional
 
@@ -10,7 +9,6 @@ from ..utils.validators import validate_program_code_unique
 
 
 class ProgramService:
-    """Service for managing program operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -49,7 +47,7 @@ class ProgramService:
                     col = "p.code"
                 elif sort_by == "name":
                     col = "p.name"
-                else:  # college -> sort by college code to match previous behavior
+                else:
                     col = "COALESCE(c.code, '')"
                 direction = "DESC" if order == "desc" else "ASC"
                 order_clause = f"ORDER BY {col} {direction}"
@@ -137,7 +135,6 @@ class ProgramService:
         if not code or not name:
             return {"data": None, "error": "Both 'code' and 'name' are required.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Validate college exists
         found = db.session.execute(text("SELECT id FROM colleges WHERE id = :id"), {"id": college_id}).scalar()
         if not found:
             return {"data": None, "error": "College not found.", "status": HTTPStatus.NOT_FOUND}
@@ -176,7 +173,6 @@ class ProgramService:
         set_clauses = []
 
         if college_id is not None:
-            # allow clearing by sending empty string
             if college_id == "":
                 set_clauses.append("college_id = NULL")
             else:

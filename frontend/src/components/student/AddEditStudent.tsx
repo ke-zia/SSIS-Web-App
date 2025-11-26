@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
@@ -57,6 +57,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     year_level?: string;
     gender?: string;
     general?: string;
+    photo?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [collegePrograms, setCollegePrograms] = useState<Program[]>([]);
@@ -194,6 +195,8 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     const f = e.target.files?.[0] || null;
     setSelectedFile(f);
     setRemoveExistingPhoto(false);
+    // Clear any previous photo errors when a new file is chosen
+    setFormErrors((prev) => ({ ...prev, photo: undefined, general: undefined }));
     if (f) {
       setPreviewUrl(URL.createObjectURL(f));
     } else {
@@ -244,10 +247,23 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
     }
   };
 
-  // Updated submit flow: create/update student first, upload photo only after DB op succeeds.
+  // Updated submit flow: validate photo client-side BEFORE DB create/update.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
+
+    // Client-side photo validation: ensure file (if provided) meets rules BEFORE saving.
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (selectedFile) {
+      if (!selectedFile.type || !selectedFile.type.startsWith("image/")) {
+        setFormErrors({ photo: "Only image files are allowed.", general: "Invalid photo file type." });
+        return;
+      }
+      if (selectedFile.size > MAX_BYTES) {
+        setFormErrors({general: "Selected photo is too large (max 5 MB)." });
+        return;
+      }
+    }
 
     // Convert year_level to number for validation if it's string
     const yearLevelValue =
@@ -627,7 +643,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                         </div>
                       )}
                       
-                      {/* Upload text */}
+                      {/* Upload text */} 
                       <div className="space-y-1">
                         <p className="font-medium text-gray-900">
                           {selectedFile ? "File Selected" : "Upload Your Photo"}
@@ -722,6 +738,9 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                                   <X className="h-4 w-4" />
                                 </Button>
                               </div>
+                              {formErrors.photo && (
+                                <div className="text-sm text-red-500 mt-2">{formErrors.photo}</div>
+                              )}
                             </div>
                           </div>
                         )}

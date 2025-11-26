@@ -1,23 +1,17 @@
-"""Database setup script using raw SQL."""
-
 import logging
 import os
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Constants
 DEFAULT_DB_NAME = "ssis_db"
 
 
 def get_database_connection(database_name=None):
-    """Get database connection."""
     try:
-        # Get connection parameters from environment
         db_host = os.environ.get("POSTGRES_HOST", "localhost")
         db_port = os.environ.get("POSTGRES_PORT", "5432")
         db_user = os.environ.get("POSTGRES_USER", "postgres")
@@ -42,15 +36,12 @@ def get_database_connection(database_name=None):
 
 
 def create_database():
-    """Create database if it doesn't exist."""
     db_name = os.environ.get("POSTGRES_DB", DEFAULT_DB_NAME)
     try:
-        # Connect to default postgres database to create our database
         conn = get_database_connection("postgres")
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = conn.cursor()
 
-        # Check if database exists
         cursor.execute(
             "SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s",
             (db_name,)
@@ -71,16 +62,13 @@ def create_database():
 
 
 def setup_tables():
-    """Set up all tables using raw SQL script."""
     try:
-        # Read SQL script
         sql_file_path = os.path.join(
             os.path.dirname(__file__),
             "sql",
             "create_tables.sql"
         )
 
-        # Check if SQL file exists
         if not os.path.exists(sql_file_path):
             logger.error(f"[X] SQL file not found: {sql_file_path}")
             raise FileNotFoundError(f"SQL file not found: {sql_file_path}")
@@ -88,12 +76,10 @@ def setup_tables():
         with open(sql_file_path, "r", encoding="utf-8") as file:
             sql_script = file.read()
 
-        # Check if SQL script is empty
         if not sql_script.strip():
             logger.error("[X] SQL script is empty!")
             raise ValueError("SQL script is empty")
 
-        # Execute SQL script
         conn = get_database_connection()
         cursor = conn.cursor()
         try:
@@ -101,8 +87,7 @@ def setup_tables():
             conn.commit()
             logger.info("[✓] SQL script executed successfully!")
         except psycopg2.Error as e:
-            # If objects already exist, that's fine - we just need to verify they're there
-            if e.pgcode == "42P07":  # duplicate_table
+            if e.pgcode == "42P07":
                 logger.warning(
                     f"[!] Some database objects already exist (normal for re-runs)"
                 )
@@ -120,12 +105,10 @@ def setup_tables():
 
 
 def verify_tables():
-    """Verify that all tables were created correctly."""
     try:
         conn = get_database_connection()
         cursor = conn.cursor()
 
-        # Check if all expected tables exist
         expected_tables = ["colleges"]
 
         cursor.execute(
@@ -145,7 +128,6 @@ def verify_tables():
         else:
             logger.info("[✓] All expected tables exist!")
 
-        # Count rows in each table (for verification)
         for table in expected_tables:
             cursor.execute(f"SELECT COUNT(*) FROM {table}")
             count = cursor.fetchone()[0]
@@ -163,18 +145,14 @@ def verify_tables():
 
 
 def main():
-    """Main setup function."""
     logger.info("Starting SSIS Database Setup...")
     try:
-        # Step 1: Create database
         logger.info("Step 1: Creating database...")
         create_database()
 
-        # Step 2: Setup tables
         logger.info("Step 2: Setting up tables...")
         setup_tables()
 
-        # Step 3: Verify setup
         logger.info("Step 3: Verifying setup...")
         success = verify_tables()
 

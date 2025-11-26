@@ -1,10 +1,7 @@
-"""College model."""
-
 from .. import db
 
 
 class College(db.Model):
-    """College model representing a college/department."""
 
     __tablename__ = "colleges"
 
@@ -13,7 +10,6 @@ class College(db.Model):
     name = db.Column(db.String(255), nullable=False)
 
     def to_dict(self):
-        """Convert college to dictionary."""
         return {
             "id": self.id,
             "code": self.code,

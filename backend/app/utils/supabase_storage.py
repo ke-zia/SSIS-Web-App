@@ -35,20 +35,6 @@ def delete_object(path: str) -> None:
 
 
 def upload_object(file_bytes: bytes, dest_path: str, content_type: str | None = None) -> str:
-    """
-    Upload raw bytes to Supabase Storage using the service role key (server-side).
-
-    Args:
-      file_bytes: file content as bytes
-      dest_path: storage path inside the bucket (e.g. "student_photos/uuid.jpg")
-      content_type: optional mime type (e.g. "image/jpeg")
-
-    Returns:
-      dest_path (the storage key to store in DB)
-
-    Raises:
-      RuntimeError on misconfiguration or upload failure.
-    """
     if not SUPABASE_URL or not SERVICE_ROLE_KEY:
         raise RuntimeError("Supabase service credentials not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).")
 
@@ -62,7 +48,6 @@ def upload_object(file_bytes: bytes, dest_path: str, content_type: str | None = 
         "Authorization": f"Bearer {SERVICE_ROLE_KEY}",
         "apikey": SERVICE_ROLE_KEY,
     }
-    # Let the caller set Content-Type when available
     if content_type:
         headers["Content-Type"] = content_type
 

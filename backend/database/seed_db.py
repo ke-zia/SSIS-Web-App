@@ -3,20 +3,16 @@ import os
 import sys
 from pathlib import Path
 
-# Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def get_database_connection():
-    """Get database connection."""
     try:
-        # Get connection parameters from environment
         db_host = os.environ.get("POSTGRES_HOST", "localhost")
         db_port = os.environ.get("POSTGRES_PORT", "5432")
         db_user = os.environ.get("POSTGRES_USER", "postgres")
@@ -36,15 +32,12 @@ def get_database_connection():
         raise
 
 def clear_existing_data():
-    """Clear existing data from tables while preserving structure."""
     try:
         conn = get_database_connection()
         cursor = conn.cursor()
         
-        # Disable foreign key constraints temporarily
         cursor.execute("SET session_replication_role = 'replica';")
         
-        # Clear data from tables in correct order (due to foreign key constraints)
         tables = ["students", "programs", "colleges", "users"]
         for table in tables:
             try:
@@ -53,7 +46,6 @@ def clear_existing_data():
             except Exception as e:
                 logger.warning(f"Could not clear {table}: {e}")
         
-        # Reset sequences
         cursor.execute("""
             SELECT c.relname FROM pg_class c 
             WHERE c.relkind = 'S';
@@ -66,7 +58,6 @@ def clear_existing_data():
                 cursor.execute(f"ALTER SEQUENCE {seq_name} RESTART WITH 1;")
                 logger.info(f"Reset sequence {seq_name}")
         
-        # Re-enable foreign key constraints
         cursor.execute("SET session_replication_role = 'origin';")
         conn.commit()
         
@@ -81,7 +72,6 @@ def clear_existing_data():
 def seed_database():
     """Seed the database with sample data."""
     try:
-        # Read the SQL seed file
         sql_file_path = Path(__file__).parent / "sql" / "seed_data.sql"
         
         if not sql_file_path.exists():
@@ -95,11 +85,9 @@ def seed_database():
             logger.error("Seed SQL script is empty!")
             raise ValueError("Seed SQL script is empty")
         
-        # Clear existing data first
         logger.info("Clearing existing data...")
         clear_existing_data()
         
-        # Execute seed script
         logger.info("Seeding database with sample data...")
         conn = get_database_connection()
         cursor = conn.cursor()
@@ -113,7 +101,6 @@ def seed_database():
             conn.rollback()
             raise
         
-        # Verify data was inserted
         cursor.execute("SELECT COUNT(*) FROM colleges;")
         college_count = cursor.fetchone()[0]
         
@@ -143,7 +130,6 @@ def seed_database():
         raise
 
 def main():
-    """Main function to run the seed script."""
     logger.info("Starting SSIS Database Seeding...")
     try:
         success = seed_database()

@@ -1,10 +1,7 @@
-"""Program model."""
-
 from .. import db
 
 
 class Program(db.Model):
-    """Program model representing a program within a college."""
 
     __tablename__ = "programs"
 
@@ -17,7 +14,6 @@ class Program(db.Model):
     college = db.relationship("College", backref="programs")
 
     def to_dict(self):
-        """Convert program to dictionary."""
         return {
             "id": self.id,
             "college_id": self.college_id,

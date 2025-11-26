@@ -1,14 +1,19 @@
-/* dashboard.css - Updated to match other pages with logout loading */
+:root {
+}
+
 .app-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background-color: #ffffff;
   font-family: 'Poppins', sans-serif;
 }
 
-/* Sidebar - Updated to match red theme */
 .sidebar {
-  width: 260px;
+  flex: 0 0 260px;
+  height: 100%;
+  max-height: 100%;
   background: linear-gradient(180deg, #7f1d1d 0%, #991b1b 100%);
   color: #ffffff;
   display: flex;
@@ -16,6 +21,8 @@
   padding: 1.5rem;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
   z-index: 10;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sidebar h2 {
@@ -40,7 +47,6 @@
   border-radius: 2px;
 }
 
-/* User profile section */
 .user-profile {
   display: flex;
   align-items: center;
@@ -74,7 +80,6 @@
   word-break: break-all;
 }
 
-/* Menu container */
 .menu-container {
   display: flex;
   flex-direction: column;
@@ -118,7 +123,6 @@
   justify-content: center;
 }
 
-/* Sidebar footer with logout button */
 .sidebar-footer {
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -159,15 +163,20 @@
   transform: translateY(0);
 }
 
-/* Main content - matches other pages */
 .main-content {
-  flex: 1;
-  background-color: #ffffff;
+  flex: 1 1 auto;
+  height: 100%;
+  max-height: 100vh;
   overflow-y: auto;
-  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
+  background-color: #ffffff;
+  padding: 1.5rem;
 }
 
-/* Loading states */
+.main-content > * {
+  min-height: 0;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -178,7 +187,6 @@
   color: #64748b;
 }
 
-/* Error states */
 .error-container {
   display: flex;
   flex-direction: column;
@@ -189,4 +197,14 @@
   color: #dc2626;
   text-align: center;
   padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 220px;
+    flex: 0 0 220px;
+  }
+  .app-container {
+    flex-direction: row;
+  }
 }

@@ -11,8 +11,6 @@ programs_bp = Blueprint("programs", __name__)
 
 @programs_bp.get("")
 def list_programs():
-    """GET /programs - return paginated programs with optional sorting and search."""
-    # Get pagination parameters from query string
     try:
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", 10))
@@ -20,23 +18,18 @@ def list_programs():
         page = 1
         per_page = 10
     
-    # Ensure page and per_page are valid
     page = max(1, page)
-    per_page = max(1, min(per_page, 100))  # Limit per_page to 100
+    per_page = max(1, min(per_page, 100))
     
-    # Get sorting parameters from query string
     sort_by = request.args.get("sort_by", "").strip()
     order = request.args.get("order", "asc").strip().lower()
     
-    # Get search parameters from query string
     search = request.args.get("search", "").strip()
     search_by = request.args.get("search_by", "all").strip().lower()
     
-    # Validate order parameter
     if order not in ["asc", "desc"]:
         order = "asc"
     
-    # Validate search_by parameter
     if search_by not in ["all", "code", "name", "college"]:
         search_by = "all"
     
@@ -60,7 +53,6 @@ def list_programs():
 
 @programs_bp.post("")
 def create_program():
-    """POST /programs - create a new program."""
     data = request.get_json() or {}
     result = ProgramService.create_from_request(data)
 
@@ -72,7 +64,6 @@ def create_program():
 
 @programs_bp.put("/<int:program_id>")
 def update_program(program_id: int):
-    """PUT /programs/{id} - update an existing program."""
     data = request.get_json() or {}
     result = ProgramService.update_from_request(program_id, data)
 
@@ -84,7 +75,6 @@ def update_program(program_id: int):
 
 @programs_bp.delete("/<int:program_id>")
 def delete_program(program_id: int):
-    """DELETE /programs/{id} - remove a program."""
     result = ProgramService.delete_by_id(program_id)
 
     if result["error"]:

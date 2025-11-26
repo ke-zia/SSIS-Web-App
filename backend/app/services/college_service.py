@@ -1,4 +1,3 @@
-"""College service using raw SQL"""
 from http import HTTPStatus
 from typing import Dict, Optional
 
@@ -10,7 +9,6 @@ from ..utils.validators import validate_college_code_unique
 
 
 class CollegeService:
-    """Service for managing college operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -22,7 +20,6 @@ class CollegeService:
         search_by: str = "all"
     ) -> Dict:
         try:
-            # Base where clause and params
             where_clauses = []
             params = {}
 
@@ -39,18 +36,15 @@ class CollegeService:
             if where_clauses:
                 where_sql = "WHERE " + " AND ".join(where_clauses)
 
-            # Count total
             count_sql = text(f"SELECT COUNT(*) AS total FROM colleges {where_sql}")
             total = db.session.execute(count_sql, params).scalar() or 0
 
-            # Sorting
             order_clause = ""
             if sort_by in ("code", "name"):
                 col = "code" if sort_by == "code" else "name"
                 direction = "DESC" if order == "desc" else "ASC"
                 order_clause = f"ORDER BY {col} {direction}"
 
-            # Pagination
             offset = (page - 1) * per_page
             params.update({"limit": per_page, "offset": offset})
 
@@ -147,7 +141,6 @@ class CollegeService:
         code = data.get("code", None)
         name = data.get("name", None)
 
-        # Normalize provided values
         if code is not None:
             code = code.strip()
             if not code:
@@ -162,7 +155,6 @@ class CollegeService:
             if not name:
                 return {"data": None, "error": "College name cannot be empty.", "status": HTTPStatus.BAD_REQUEST}
 
-        # Build dynamic update
         set_clauses = []
         params = {"id": college_id}
         if code is not None:
@@ -173,7 +165,6 @@ class CollegeService:
             params["name"] = name
 
         if not set_clauses:
-            # Nothing to update
             return {"data": existing, "error": None, "status": HTTPStatus.OK}
 
         update_sql = text(f"UPDATE colleges SET {', '.join(set_clauses)} WHERE id = :id RETURNING id, code, name")

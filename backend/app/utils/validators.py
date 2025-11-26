@@ -1,5 +1,3 @@
-"""Validation utilities using raw SQL (no ORM queries)."""
-
 from typing import Optional, Tuple
 
 from sqlalchemy import text

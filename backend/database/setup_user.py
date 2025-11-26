@@ -1,12 +1,3 @@
-"""Interactive script to create a user (email + password) in the database.
-
-Usage:
-  python setup_user.py
-
-The script prompts for email and password (hidden input), hashes the password
-using Werkzeug's `generate_password_hash`, and inserts the record into the
-`users` table defined in `create_tables.sql`.
-"""
 import getpass
 import logging
 import os
@@ -16,13 +7,11 @@ import sys
 import psycopg2
 from werkzeug.security import generate_password_hash
 
-# Try to import the connection helper from setup_db if available
 try:
     from setup_db import get_database_connection
 except Exception:
-    # If run as a module, adjust import path
     try:
-        from backend.database.setup_db import get_database_connection  # type: ignore
+        from backend.database.setup_db import get_database_connection
     except Exception:
         get_database_connection = None
 
@@ -53,7 +42,6 @@ def prompt_credentials():
 
 def insert_user(conn, email, password_hash):
     with conn.cursor() as cur:
-        # Check if email exists
         cur.execute("SELECT id FROM users WHERE email = %s", (email,))
         existing = cur.fetchone()
         if existing:
@@ -75,7 +63,6 @@ def main():
     email, password = prompt_credentials()
     password_hash = generate_password_hash(password)
 
-    # Obtain DB connection using helper if available
     conn = None
     if get_database_connection:
         try:
@@ -84,7 +71,6 @@ def main():
             logger.error(f"Failed to get DB connection: {e}")
             sys.exit(1)
     else:
-        # Fallback: use environment variables, similar to setup_db
         db_host = os.environ.get("POSTGRES_HOST", "localhost")
         db_port = os.environ.get("POSTGRES_PORT", "5432")
         db_user = os.environ.get("POSTGRES_USER", "postgres")

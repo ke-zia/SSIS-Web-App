@@ -1,4 +1,3 @@
-"""Student service using raw SQL (no ORM queries)."""
 from http import HTTPStatus
 from typing import Dict, Optional
 import re
@@ -10,7 +9,6 @@ from .. import db
 
 
 class StudentService:
-    """Service for managing student operations using raw SQL."""
 
     @staticmethod
     def list_all(
@@ -303,7 +301,6 @@ class StudentService:
 
         try:
             if new_student_id and new_student_id != student_id:
-                # Create a savepoint for nested transaction
                 db.session.begin_nested()
                 
                 existing_row = db.session.execute(text("SELECT id, first_name, last_name, program_id, year_level, gender, photo FROM students WHERE id = :id"), {"id": student_id}).mappings().first()
@@ -348,7 +345,6 @@ class StudentService:
 
                 db.session.execute(text("DELETE FROM students WHERE id = :id"), {"id": student_id})
                 
-                # Release the savepoint
                 db.session.commit()
                 
                 new_student = StudentService.get_by_id(new_student_id)

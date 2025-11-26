@@ -5,7 +5,8 @@ import { AlertTriangle, X } from "lucide-react";
 interface RemoveStudentPhotoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  // allow sync or async handlers
+  onConfirm: () => Promise<void> | void;
   isRemoving?: boolean;
 }
 
@@ -24,7 +25,22 @@ const RemoveStudentPhoto: React.FC<RemoveStudentPhotoProps> = ({
   };
 
   const handleCancel = () => onOpenChange(false);
-  const handleConfirm = () => onConfirm();
+
+  // Await possible promise returned by onConfirm and close modal on success.
+  const handleConfirm = async () => {
+    try {
+      if (isRemoving) return;
+      const result = onConfirm();
+      // Use unknown cast to avoid TypeScript error when converting void -> Promise<void>
+      if (result && typeof (result as any).then === "function") {
+        await (result as unknown as Promise<void>);
+      }
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Error while removing photo:", err);
+      // keep modal open so caller can display error if needed
+    }
+  };
 
   return (
     <>

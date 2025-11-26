@@ -11,8 +11,6 @@ colleges_bp = Blueprint("colleges", __name__)
 
 @colleges_bp.get("")
 def list_colleges():
-    """GET /colleges - return paginated colleges with optional sorting and search."""
-    # Get pagination parameters from query string
     try:
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", 10))
@@ -20,23 +18,18 @@ def list_colleges():
         page = 1
         per_page = 10
     
-    # Ensure page and per_page are valid
     page = max(1, page)
-    per_page = max(1, min(per_page, 100))  # Limit per_page to 100
+    per_page = max(1, min(per_page, 100))
     
-    # Get sorting parameters from query string
     sort_by = request.args.get("sort_by", "").strip()
     order = request.args.get("order", "asc").strip().lower()
     
-    # Get search parameters from query string
     search = request.args.get("search", "").strip()
     search_by = request.args.get("search_by", "all").strip().lower()
     
-    # Validate order parameter
     if order not in ["asc", "desc"]:
         order = "asc"
     
-    # Validate search_by parameter
     if search_by not in ["all", "code", "name"]:
         search_by = "all"
     
@@ -60,7 +53,6 @@ def list_colleges():
 
 @colleges_bp.post("")
 def create_college():
-    """POST /colleges - create a new college."""
     data = request.get_json() or {}
     result = CollegeService.create_from_request(data)
 
@@ -72,7 +64,6 @@ def create_college():
 
 @colleges_bp.put("/<int:college_id>")
 def update_college(college_id: int):
-    """PUT /colleges/{id} - update an existing college."""
     data = request.get_json() or {}
     result = CollegeService.update_from_request(college_id, data)
 
@@ -84,7 +75,6 @@ def update_college(college_id: int):
 
 @colleges_bp.delete("/<int:college_id>")
 def delete_college(college_id: int):
-    """DELETE /colleges/{id} - remove a college."""
     result = CollegeService.delete_by_id(college_id)
 
     if result["error"]:
