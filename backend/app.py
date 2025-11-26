@@ -29,8 +29,8 @@ app = create_app()
 THIS_DIR = os.path.dirname(__file__)
 REPO_ROOT = os.path.normpath(os.path.join(THIS_DIR, ".."))
 FRONTEND_DIR = os.path.join(REPO_ROOT, "frontend")
-# Vite default build output is "dist"
-FRONTEND_DIST = os.path.join(FRONTEND_DIR, "dist")
+# Vite build output now goes to backend/frontend_dist
+FRONTEND_DIST = os.path.join(THIS_DIR, "frontend_dist")
 
 def build_frontend():
     """Run npm ci && npm run build inside frontend dir. Raises SystemExit on failure."""
@@ -62,10 +62,10 @@ def build_frontend():
         sys.exit(e.returncode)
 
     if not os.path.exists(FRONTEND_DIST):
-        print("Frontend build completed but dist directory not found.")
+        print("Frontend build completed but frontend_dist directory not found in backend.")
         sys.exit(1)
 
-# Only build if the dist directory is missing
+# Only build if the frontend_dist directory is missing
 if not os.path.exists(FRONTEND_DIST):
     build_frontend()
 else:
@@ -77,9 +77,9 @@ else:
 @app.route("/<path:path>")
 def serve_frontend(path: str):
     """
-    Serve a built frontend from frontend/dist.
-    - If the requested file exists in dist, serve it.
-    - Otherwise, serve dist/index.html so the SPA router can handle the route.
+    Serve a built frontend from backend/frontend_dist.
+    - If the requested file exists in frontend_dist, serve it.
+    - Otherwise, serve frontend_dist/index.html so the SPA router can handle the route.
     """
     # normalized path to file in dist
     if path != "" and os.path.exists(os.path.join(FRONTEND_DIST, path)):
