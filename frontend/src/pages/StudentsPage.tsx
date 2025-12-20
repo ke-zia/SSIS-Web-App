@@ -1,4 +1,4 @@
-// (updated) fetchPrograms and program cell mapping; added Photo column
+// (updated) fetchStudents and program cell mapping; added Photo column and filter dropdowns
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ColumnDef,
@@ -9,6 +9,7 @@ import {
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
+import PortalSelect from "../components/ui/portal-select";
 import {
   Table,
   TableBody,
@@ -68,6 +69,11 @@ const StudentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filter states
+  const [programFilter, setProgramFilter] = useState<string>("all"); // program code (not id)
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [genderFilter, setGenderFilter] = useState<string>("all");
+
   // Pagination state (aligned with backend)
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
@@ -98,13 +104,22 @@ const StudentsPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // Prepare filters to send to service: send undefined for "all"
+      const programCodeForApi = programFilter && programFilter !== "all" ? programFilter : undefined;
+      const yearLevelForApi = yearFilter && yearFilter !== "all" ? parseInt(yearFilter, 10) : undefined;
+      const genderForApi = genderFilter && genderFilter !== "all" ? genderFilter : undefined;
+
       const response = await getAllStudents(
         currentPage,
         entriesPerPage,
         sortBy || undefined,
         sortBy ? sortOrder : undefined,
         searchQuery || undefined,
-        searchBy
+        searchBy,
+        programCodeForApi,
+        yearLevelForApi,
+        genderForApi
       );
 
       // Map students to populate photo_url if photo path is present
@@ -151,9 +166,10 @@ const StudentsPage: React.FC = () => {
     fetchPrograms();
   }, []);
 
+  // Re-fetch when any of pagination, sorting, search, or filters change
   useEffect(() => {
     fetchStudents();
-  }, [currentPage, entriesPerPage, sortBy, sortOrder, searchQuery, searchBy]);
+  }, [currentPage, entriesPerPage, sortBy, sortOrder, searchQuery, searchBy, programFilter, yearFilter, genderFilter]);
 
   const openAddDialog = () => {
     setSelectedStudent(null);
@@ -395,6 +411,52 @@ const StudentsPage: React.FC = () => {
   const filteredStudents = students;
   const displayTotal = pagination.total;
 
+  // Check if any filter is active (not "all")
+  const isAnyFilterActive = () => {
+    return programFilter !== "all" || 
+           yearFilter !== "all" || 
+           genderFilter !== "all" ||
+           searchQuery !== "";
+  };
+
+  // Get filter description for empty state
+  const getFilterDescription = () => {
+    const activeFilters = [];
+    
+    if (programFilter !== "all") {
+      const program = programs.find(p => p.code === programFilter);
+      activeFilters.push(`Program: ${program?.code || programFilter}`);
+    }
+    
+    if (yearFilter !== "all") {
+      const yearLabels: { [key: string]: string } = {
+        "1": "1st Year",
+        "2": "2nd Year", 
+        "3": "3rd Year",
+        "4": "4th Year",
+        "5": "5th Year"
+      };
+      activeFilters.push(`Year Level: ${yearLabels[yearFilter] || yearFilter}`);
+    }
+    
+    if (genderFilter !== "all") {
+      activeFilters.push(`Gender: ${genderFilter}`);
+    }
+    
+    if (searchQuery) {
+      const searchByLabel = searchBy === "all" ? "All Fields" : 
+                           searchBy === "id" ? "ID Number" :
+                           searchBy === "first_name" ? "First Name" :
+                           searchBy === "last_name" ? "Last Name" :
+                           searchBy === "program" ? "Program" :
+                           searchBy === "year_level" ? "Year Level" :
+                           searchBy === "gender" ? "Gender" : "Search";
+      activeFilters.push(`${searchByLabel}: "${searchQuery}"`);
+    }
+    
+    return activeFilters.length > 0 ? activeFilters.join(", ") : "No active filters";
+  };
+
   // Update table with paginated data from backend
   const table = useReactTable({
     data: filteredStudents,
@@ -422,11 +484,60 @@ const StudentsPage: React.FC = () => {
     setCurrentPage(1);
   };
 
+  // New filter handlers
+  const handleProgramFilterChange = (value: string) => {
+    setProgramFilter(value);
+    setCurrentPage(1);
+  };
+  const handleYearFilterChange = (value: string) => {
+    setYearFilter(value);
+    setCurrentPage(1);
+  };
+  const handleGenderFilterChange = (value: string) => {
+    setGenderFilter(value);
+    setCurrentPage(1);
+  };
+
   const showSuccessToast = (message: string) => {
     setSuccessToast({ isOpen: true, message });
     setTimeout(() => {
       setSuccessToast({ isOpen: false, message: "" });
     }, 3000);
+  };
+
+  // Empty State Component
+  const EmptyState = () => {
+    const hasActiveFilters = isAnyFilterActive();
+    
+    return (
+      <TableRow>
+        <TableCell
+          colSpan={columns.length}
+          className="h-64 text-center"
+        >
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="p-4 rounded-full bg-gray-100">
+              <Users className="h-10 w-10 text-gray-400" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-500">No students found</p>
+            </div>
+            <div className="text-sm text-gray-400 max-w-md text-center">
+              {hasActiveFilters ? (
+                <div>
+                  <p className="text-xs bg-gray-50 p-2 rounded border border-gray-200 font-mono">
+                    {getFilterDescription()}
+                  </p>
+                  <p className="mt-3">Try adjusting your filters or search criteria</p>
+                </div>
+              ) : (
+                "Get started by adding your first student"
+              )}
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
   };
 
   // Custom pagination component using backend pagination data
@@ -603,6 +714,54 @@ const StudentsPage: React.FC = () => {
                     <option value="year_level">Year Level</option>
                     <option value="gender">Gender</option>
                   </Select>
+
+                  <div className="border-l border-gray-300 h-6" />
+                    <p className="text-sm text-gray-500">
+                      Filter by
+                    </p>
+
+                  {/* Filters: Program Code, Year Level, Gender */}
+                  <PortalSelect
+                    value={programFilter}
+                    onChange={handleProgramFilterChange}
+                    options={[
+                      { value: "all", label: "All Programs" },
+                      ...programs.map(p => ({ value: p.code, label: p.code }))
+                    ]}
+                    placeholder="All Programs"
+                    maxVisibleRows={6}
+                    className="w-[150px] border-gray-300 h-9 text-sm"
+                  />
+
+                  <PortalSelect
+                    value={yearFilter}
+                    onChange={handleYearFilterChange}
+                    options={[
+                      { value: "all", label: "All Years" },
+                      { value: "1", label: "1st Year" },
+                      { value: "2", label: "2nd Year" },
+                      { value: "3", label: "3rd Year" },
+                      { value: "4", label: "4th Year" },
+                      { value: "5", label: "5th Year" }
+                    ]}
+                    placeholder="All Years"
+                    maxVisibleRows={6}
+                    className="w-[150px] border-gray-300 h-9 text-sm"
+                  />
+
+                  <PortalSelect
+                    value={genderFilter}
+                    onChange={handleGenderFilterChange}
+                    options={[
+                      { value: "all", label: "All Genders" },
+                      { value: "Male", label: "Male" },
+                      { value: "Female", label: "Female" },
+                      { value: "Other", label: "Other" }
+                    ]}
+                    placeholder="All Genders"
+                    maxVisibleRows={6}
+                    className="w-[150px] border-gray-300 h-9 text-sm"
+                  />
                 </div>
                 
                 {/* Right side: Show entries section */}
@@ -693,45 +852,19 @@ const StudentsPage: React.FC = () => {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-64 text-center"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="p-4 rounded-full bg-gray-100">
-                            <Users className="h-10 w-10 text-gray-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-500">No students found</p>
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            {searchQuery 
-                              ? "No results match your search" 
-                              : "Get started by adding your first student"}
-                          </div>
-                          {!searchQuery && (
-                            <Button
-                              onClick={openAddDialog}
-                              className="bg-red-600 hover:bg-red-700 text-white gap-2 mt-2"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Student
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <EmptyState />
                   )}
                 </TableBody>
               </Table>
             )}
           </div>
 
-          {/* Pagination */}
-          <div className="p-4">
-            <CustomPagination />
-          </div>
+          {/* Pagination - Only show if there are students */}
+          {displayTotal > 0 && (
+            <div className="p-4">
+              <CustomPagination />
+            </div>
+          )}
         </Card>
       </div>
 

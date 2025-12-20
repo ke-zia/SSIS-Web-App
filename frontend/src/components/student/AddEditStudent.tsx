@@ -73,6 +73,10 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
   const [removePhotoOpen, setRemovePhotoOpen] = useState(false);
   const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
 
+  // Refs to control initial prefilling vs user edits
+  const initialLoadRef = useRef(true);
+  const programManuallyChangedRef = useRef(false);
+
   // Sort colleges alphabetically by name for the portal dropdown
   const sortedCollegeOptions = useMemo(() => {
     const arr = [...colleges];
@@ -112,6 +116,9 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
 
   useEffect(() => {
     if (open) {
+      initialLoadRef.current = true;
+      programManuallyChangedRef.current = false;
+
       if (student) {
         setFormState({
           id: student.id,
@@ -176,6 +183,10 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
       }
       setFormErrors({});
       setRemovePhotoOpen(false);
+    } else {
+      // reset refs when closing
+      initialLoadRef.current = true;
+      programManuallyChangedRef.current = false;
     }
   }, [open, student, allPrograms]);
 
@@ -522,7 +533,6 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                       onChange={(val) => {
                         const id = val ? parseInt(val) : null;
                         setSelectedCollegeId(id);
-                        // Don't manually set collegePrograms here - let loadProgramsForCollege handle it
                       }}
                       options={sortedCollegeOptions.map((c) => ({ value: c.value, label: c.label }))}
                       placeholder="Select a college"
@@ -547,6 +557,7 @@ const AddEditStudent: React.FC<AddEditStudentProps> = ({
                     onChange={(e) => {
                       const value = e.target.value;
                       setFormState((prev) => ({ ...prev, program_id: value ? parseInt(value) : null }));
+                      programManuallyChangedRef.current = true;
                     }}
                     disabled={isSubmitting || isRemovingPhoto}
                     className={`h-11 transition-all duration-200 ${

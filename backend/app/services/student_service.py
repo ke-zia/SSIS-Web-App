@@ -17,12 +17,16 @@ class StudentService:
         sort_by: str = "",
         order: str = "asc",
         search: str = "",
-        search_by: str = "all"
+        search_by: str = "all",
+        program_code: Optional[str] = None,
+        year_level: Optional[int] = None,
+        gender: Optional[str] = None,
     ) -> Dict:
         try:
             where_clauses = []
             params = {}
 
+            # Search handling
             if search:
                 params["search"] = f"%{search}%"
                 if search_by == "all":
@@ -42,6 +46,22 @@ class StudentService:
                     where_clauses.append("CAST(s.year_level AS TEXT) ILIKE :search")
                 elif search_by == "gender":
                     where_clauses.append("s.gender ILIKE :search")
+
+            # Filters: program_code, year_level, gender
+            if program_code:
+                # match exact program code, case-insensitive
+                params["program_code"] = program_code
+                where_clauses.append("p.code ILIKE :program_code")
+            if year_level is not None:
+                try:
+                    params["year_level"] = int(year_level)
+                    where_clauses.append("s.year_level = :year_level")
+                except (ValueError, TypeError):
+                    # ignore invalid year_level filter
+                    pass
+            if gender:
+                params["gender"] = gender
+                where_clauses.append("s.gender = :gender")
 
             where_sql = ""
             if where_clauses:
@@ -389,3 +409,22 @@ class StudentService:
             return {"data": programs, "error": None, "status": HTTPStatus.OK}
         except Exception:
             return {"data": None, "error": "Failed to retrieve programs.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}
+
+    @staticmethod
+    def clear_photo(student_id: str) -> Dict:
+        """
+        Clear the photo column for a student (set photo = NULL).
+        Returns {"error": None, "status": HTTPStatus.OK} on success or an error dict.
+        """
+        # Ensure student exists
+        existing = db.session.execute(text("SELECT id FROM students WHERE id = :id"), {"id": student_id}).scalar()
+        if not existing:
+            return {"error": "Student not found.", "status": HTTPStatus.NOT_FOUND}
+
+        try:
+            db.session.execute(text("UPDATE students SET photo = NULL WHERE id = :id"), {"id": student_id})
+            db.session.commit()
+            return {"error": None, "status": HTTPStatus.OK}
+        except Exception:
+            db.session.rollback()
+            return {"error": "Failed to clear student photo.", "status": HTTPStatus.INTERNAL_SERVER_ERROR}

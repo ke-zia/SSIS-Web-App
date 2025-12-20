@@ -30,6 +30,19 @@ def list_students():
     search = request.args.get("search", "").strip()
     search_by = request.args.get("search_by", "all").strip().lower()
 
+    # New filter params
+    program_code = request.args.get("program_code", "").strip() or None
+    year_level_raw = request.args.get("year_level", "").strip() or None
+    gender = request.args.get("gender", "").strip() or None
+
+    # Normalize year_level to int if present
+    year_level = None
+    if year_level_raw:
+        try:
+            year_level = int(year_level_raw)
+        except (ValueError, TypeError):
+            year_level = None
+
     if order not in ["asc", "desc"]:
         order = "asc"
 
@@ -42,7 +55,10 @@ def list_students():
         sort_by=sort_by,
         order=order,
         search=search,
-        search_by=search_by
+        search_by=search_by,
+        program_code=program_code,
+        year_level=year_level,
+        gender=gender
     )
 
     if result["error"]:
@@ -168,3 +184,25 @@ def get_programs_by_college(college_id: int):
     if result["error"]:
         return jsonify({"message": result["error"]}), result["status"]
     return jsonify(result["data"]), HTTPStatus.OK
+
+@students_bp.post("/<string:student_id>/remove-photo")
+def remove_student_photo(student_id: str):
+    student = StudentService.get_by_id(student_id)
+    if not student:
+        return jsonify({"message": "Student not found."}), HTTPStatus.NOT_FOUND
+
+    photo_path = student.get("photo") if isinstance(student, dict) else getattr(student, "photo", None)
+
+    if not photo_path:
+        return jsonify({"message": "Student has no photo to remove."}), HTTPStatus.BAD_REQUEST
+
+    try:
+        delete_object(photo_path)
+    except Exception as e:
+        current_app.logger.warning(f"Failed to delete storage object '{photo_path}' for student '{student_id}': {e}")
+
+    result = StudentService.clear_photo(student_id)
+    if result["error"]:
+        return jsonify({"message": result["error"]}), result["status"]
+
+    return ("", HTTPStatus.NO_CONTENT)
